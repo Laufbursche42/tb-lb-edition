@@ -34,6 +34,7 @@ window.I18N = {
       "<b>Settings can break things.</b> Writing the wrong motor/config parameter can leave a scooter unusable and can void its warranty.",
       "<b>Road traffic law stays your job.</b> A scooter set up outside its approved configuration does not belong on public roads.",
       "<b>Not an official Trittbrett app.</b> This is an independent project. The developer is not affiliated with, endorsed by or connected to Trittbrett.",
+      "<b>No account, no telemetry.</b> The app collects nothing and sends no data anywhere except what you explicitly trigger (maps, routing, updates, streaming). See the <span class=\"link-ble\" onclick=\"openExt('https://github.com/Laufbursche42/tb-lb-edition/blob/main/PRIVACY.md')\">Privacy Policy</span>.",
     ],
 
 
@@ -131,6 +132,7 @@ window.I18N = {
     "fw.verinfo.disclaimer": "This is not an official Trittbrett app. The developer (Laufbursche) is not affiliated with, endorsed by or connected to Trittbrett. Trittbrett is a trademark of its respective owner.",
     "fw.verinfo.license": "Laufbursche Edition is source-available under the PolyForm Noncommercial License 1.0.0 with Additional Terms. Read the <span class=\"link-ble\" onclick=\"openExt('https://github.com/Laufbursche42/tb-lb-edition/blob/main/README.md')\">GitHub README</span> and <span class=\"link-ble\" onclick=\"openExt('https://github.com/Laufbursche42/tb-lb-edition/blob/main/license.md')\">License</span>.",
     "fw.verinfo.map.attribution": "Offline maps and POI data (camping / charging) are &copy; OpenStreetMap contributors, licensed under the ODbL 1.0.",
+    "fw.verinfo.privacy": "The app collects nothing and sends no telemetry. See the <span class=\"link-ble\" onclick=\"openExt('https://github.com/Laufbursche42/tb-lb-edition/blob/main/PRIVACY.md')\">Privacy Policy</span> and <span class=\"link-ble\" onclick=\"openExt('https://github.com/Laufbursche42/tb-lb-edition/blob/main/PERMISSIONS.md')\">Permissions</span> for details.",
     "fw.verinfo.title": "Version Info &amp; Disclaimer",
 
     "info.copy": "Copy",
@@ -459,6 +461,7 @@ window.I18N = {
       "<b>Einstellungen können etwas kaputt machen.</b> Ein falsch gesetzter Motor-/Konfigurationsparameter kann einen Scooter unbrauchbar machen und die Garantie kosten.",
       "<b>Die Straßenverkehrsordnung bleibt deine Sache.</b> Ein Scooter, der außerhalb seiner Zulassung eingestellt ist, gehört nicht auf öffentliche Straßen.",
       "<b>Keine offizielle Trittbrett-App.</b> Das hier ist ein unabhängiges Projekt. Der Entwickler steht in keiner Verbindung zu Trittbrett und wird von Trittbrett nicht unterstützt.",
+      "<b>Kein Konto, keine Telemetrie.</b> Die App sammelt nichts und sendet keine Daten, außer was du selbst ausdrücklich auslöst (Karten, Routing, Updates, Streaming). Siehe die <span class=\"link-ble\" onclick=\"openExt('https://github.com/Laufbursche42/tb-lb-edition/blob/main/PRIVACY.md')\">Datenschutzerklärung</span>.",
     ],
 
 
@@ -556,6 +559,7 @@ window.I18N = {
     "fw.verinfo.disclaimer": "Das ist keine offizielle Trittbrett-App. Der Entwickler (Laufbursche) hat keine Verbindung zu Trittbrett und wird von Trittbrett nicht unterstützt oder empfohlen. Trittbrett ist eine Marke des jeweiligen Inhabers.",
     "fw.verinfo.license": "Laufbursche Edition ist source-available unter der PolyForm Noncommercial License 1.0.0 mit Additional Terms. Lies die <span class=\"link-ble\" onclick=\"openExt('https://github.com/Laufbursche42/tb-lb-edition/blob/main/README.md')\">GitHub README</span> und die <span class=\"link-ble\" onclick=\"openExt('https://github.com/Laufbursche42/tb-lb-edition/blob/main/license.md')\">Lizenz</span>.",
     "fw.verinfo.map.attribution": "Offline-Karten und POI-Daten (Camping / Laden) sind &copy; OpenStreetMap contributors, lizenziert unter der ODbL 1.0.",
+    "fw.verinfo.privacy": "Die App sammelt nichts und sendet keine Telemetrie. Details in der <span class=\"link-ble\" onclick=\"openExt('https://github.com/Laufbursche42/tb-lb-edition/blob/main/PRIVACY.md')\">Datenschutzerklärung</span> und den <span class=\"link-ble\" onclick=\"openExt('https://github.com/Laufbursche42/tb-lb-edition/blob/main/PERMISSIONS.md')\">Berechtigungen</span>.",
     "fw.verinfo.title": "Versionsinfo &amp; Haftungsausschluss",
 
     "info.copy": "Kopieren",

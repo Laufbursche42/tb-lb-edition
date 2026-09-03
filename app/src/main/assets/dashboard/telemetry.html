@@ -700,6 +700,7 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
     <div class="verinfo-ver"><span data-i18n="fw.verinfo.appversion.label">App version:</span> <span id="verinfo-ver">-</span></div>
     <p id="verinfo-disclaimer" data-i18n="fw.verinfo.disclaimer">This is not an official Trittbrett app. The developer (Laufbursche) is not affiliated with, endorsed by or connected to Trittbrett. Trittbrett is a trademark of its respective owner.</p>
     <p id="verinfo-license" data-i18n="fw.verinfo.license">Laufbursche Edition is source-available under the PolyForm Noncommercial License 1.0.0 with Additional Terms. Read the <span class="link-ble" onclick="openExt('https://github.com/Laufbursche42/tb-lb-edition/blob/main/README.md')">GitHub README</span> and <span class="link-ble" onclick="openExt('https://github.com/Laufbursche42/tb-lb-edition/blob/main/license.md')">License</span>.</p>
+    <p id="verinfo-privacy" data-i18n="fw.verinfo.privacy">The app collects nothing and sends no telemetry. See the <span class="link-ble" onclick="openExt('https://github.com/Laufbursche42/tb-lb-edition/blob/main/PRIVACY.md')">Privacy Policy</span> and <span class="link-ble" onclick="openExt('https://github.com/Laufbursche42/tb-lb-edition/blob/main/PERMISSIONS.md')">Permissions</span> for details.</p>
     <p id="verinfo-osm" data-i18n="fw.verinfo.map.attribution">Offline maps and POI data (camping / charging) are &copy; OpenStreetMap contributors, licensed under the ODbL 1.0.</p>
     <p><span class="link-ble" id="verinfo-disclaimer-link" data-i18n="disclaimer.read.link">Read the liability disclaimer</span></p>
     <button type="button" id="verinfo-close" data-i18n="fw.verinfo.close">Close</button>
@@ -3165,9 +3166,11 @@ function updateQuickToggles(data) {
    on the right value. */
 
 const FOLD_MIN_SCALE = 0.55;   // below this the labels stop being readable, so allow a scroll instead
-const FOLD_MAX_SCALE = 1.75;   // measured fixed point that exactly fills the fold on a Pixel-size
-                                // screen (natural height 442px * 1.754 ~= avail 775px); above this
-                                // the hero/motor labels start wrapping to two lines
+const FOLD_MAX_SCALE = 1.7;    // measured fixed point that exactly fills the fold on a Pixel-size
+                                // screen is ~1.754 (natural height 442px, avail 775px), but that is
+                                // right on the edge where "Battery %"/"A Current" wrap to two lines
+                                // on some runs (small variance in the status-bar/layout timing) -
+                                // kept a safety margin below it instead of the exact fixed point
 const FOLD_BOTTOM_GAP = 5;     // breathing room between the last button row and the screen edge
 
 let _foldScale = 0;            // last applied factor, 0 = never fitted
