@@ -55,7 +55,8 @@ Everything below is implemented and shipping in the app.
 
 - **Live speed drums** - side-by-side scooter speed and GPS speed.
 - **Hero tiles** - battery percentage, gear and battery current at a glance.
-- **Vehicle and battery grid** - voltage, current, power, controller and motor temperature, battery temperature, capacity used/total, trip and total distance, Bluetooth signal strength and any active fault codes.
+- **Motor and trip tiles** - controller and motor temperature, power, voltage, trip and total distance, all in view without scrolling.
+- **Vehicle and battery grid** (below the main screen) - the same values plus battery temperature, capacity used/total, Bluetooth signal strength and any active fault codes.
 - **Quick toggles** right below the motor tiles - headlight, ambient lighting, kickstart (zero-start) and turning cruise control off. They are written to the scooter immediately and highlight while active. Gear already has its own hero tile above, so it is not repeated here. Everything else lives in the Scooter Settings sheet (see below).
 
 ### "All values" telemetry (scroll down on the main screen)

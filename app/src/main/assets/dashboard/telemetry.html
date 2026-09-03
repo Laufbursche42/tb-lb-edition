@@ -74,7 +74,7 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
       </div>
     </div>
 
-    <!-- Motor (single motor: ESC temp, motor temp, power). ZYD only. -->
+    <!-- Motor + trip (single motor: ESC/motor temp, power; then voltage, trip, total). ZYD only. -->
     <div class="section-hdr sub-hdr zyd-only">
       <span data-i18n="dash.motors.section">Motor</span>
     </div>
@@ -96,12 +96,29 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
           <div class="mc-unit" data-i18n="dash.motor.power.unit">W</div>
         </div>
       </div>
+      <div id="motor-row-2">
+        <div class="motor-cell">
+          <div class="mc-title" data-i18n="dash.motor.volt.title">VOLT</div>
+          <div class="mc-main"><span id="m-volt">-</span></div>
+          <div class="mc-unit" data-i18n="dash.motor.volt.unit">V</div>
+        </div>
+        <div class="motor-cell">
+          <div class="mc-title" data-i18n="dash.motor.trip.title">TRIP</div>
+          <div class="mc-main"><span id="m-trip">-</span></div>
+          <div class="mc-unit" data-i18n="dash.motor.dist.unit">km</div>
+        </div>
+        <div class="motor-cell">
+          <div class="mc-title" data-i18n="dash.motor.total.title">TOTAL</div>
+          <div class="mc-main"><span id="m-total">-</span></div>
+          <div class="mc-unit" data-i18n="dash.motor.dist.unit">km</div>
+        </div>
+      </div>
     </div>
 
     <!-- Quick toggles (ZYD only): headlight, ambient light, zero-start and cruise-off, written
          immediately over BLE via sendSetting - same flat single-row button style as the base
          app's #drive-quick/#motor-quick. Gear already has its own hero tile above, so it is not
-         repeated here. Speed unlock/lock moved to a triple-tap on the km/h · BLE tile above (see
+         repeated here. Speed unlock/lock moved to a triple-tap on the km/h · VCU tile above (see
          bleDrumTripleTap) - it needs no permanent screen space and mirrors how the original app's
          speed-lock gesture worked. -->
     <div id="quick-toggles" class="zyd-only" role="group" aria-label="Quick toggles" data-i18n-aria="dash.quick.group">
@@ -1223,6 +1240,7 @@ function updateBLEUI(data) {
   document.querySelector('.gps-drum .sd-unit').textContent = speedUnitGPS();
 
   const DASH = ['ble-speed','soc-val','gear-val','current-val','esc-temp','mot-temp','m-power',
+    'm-volt','m-trip','m-total',
     'dg-volt','dg-current','dg-power','dg-batttemp','dg-total','dg-single','dg-rssi','dg-cap',
     'dg-lock','dg-cruise','dg-faults','dg-ver','dg-legacy-volt'];
 
@@ -1292,6 +1310,11 @@ function updateBLEUI(data) {
   const escEl = document.getElementById('esc-temp'); if (escEl) escEl.style.color = tempColor(data.escTemp);
   const motEl = document.getElementById('mot-temp'); if (motEl) motEl.style.color = tempColor(data.motTemp);
   setTxt('m-power', data.power.toFixed(2));
+  setTxt('m-volt', data.volt != null ? data.volt.toFixed(1) : '-');
+  setTxt('m-trip', convDist(data.trip).toFixed(1));
+  setTxt('m-total', convDist(data.total).toFixed(1));
+  document.querySelectorAll('#motor-row-2 .mc-unit[data-i18n="dash.motor.dist.unit"]')
+    .forEach(el => { el.textContent = distUnit(); });
 
   // Grid
   setTxt('dg-volt', data.volt != null ? `${data.volt.toFixed(1)} V` : '-');
@@ -3072,7 +3095,7 @@ function scootSetLock(unlock) {
   catch (e) { showToast(tf('msg2.toast.error', { e: e })); }
 }
 
-/* ── Speed unlock/lock (ZYD only): triple-tap the km/h · BLE tile, same gesture the original
+/* ── Speed unlock/lock (ZYD only): triple-tap the km/h · VCU tile, same gesture the original
    app used for its speed-lock tile. There is no live echo of the register-write result (the
    protocol has no readback for it), so the "unlocked" state is purely local UI memory, reset
    on every fresh connection so a stale state never survives a reconnect. */
@@ -3142,9 +3165,7 @@ function updateQuickToggles(data) {
    on the right value. */
 
 const FOLD_MIN_SCALE = 0.55;   // below this the labels stop being readable, so allow a scroll instead
-const FOLD_MAX_SCALE = 2.0;    // above this the tiles look inflated on a tall screen; raised from
-                                // 1.5 after the fold lost the speed-card row, which used to fill
-                                // this same space on a typical phone
+const FOLD_MAX_SCALE = 1.6;    // above this the tiles look inflated on a tall screen
 const FOLD_BOTTOM_GAP = 5;     // breathing room between the last button row and the screen edge
 
 let _foldScale = 0;            // last applied factor, 0 = never fitted
@@ -3275,7 +3296,7 @@ function wireEvents() {
   document.getElementById('scoot-unlock').addEventListener('click', () => scootSetLock(true));
   document.getElementById('scoot-lock-btn').addEventListener('click', () => scootSetLock(false));
 
-  // Speed unlock/lock: triple-tap the km/h · BLE tile on the main screen (ZYD only).
+  // Speed unlock/lock: triple-tap the km/h · VCU tile on the main screen (ZYD only).
   document.getElementById('ble-drum').addEventListener('click', bleDrumTripleTap);
 
   // Quick toggles (main dashboard): headlight, ambient, zero-start, gear - written immediately.
