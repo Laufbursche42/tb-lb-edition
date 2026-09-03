@@ -16,6 +16,7 @@ Download the app: **[latest release](https://github.com/Laufbursche42/tb-lb-edit
     - ["All values" telemetry](#all-values-telemetry-scroll-down-on-the-main-screen)
     - [Connection](#connection)
     - [Scooter settings](#scooter-settings)
+    - [The speed unlock](#the-speed-unlock)
     - [In-app updates](#in-app-updates)
     - [Info & diagnostics](#info--diagnostics)
     - [Screen streaming](#screen-streaming)
@@ -77,13 +78,21 @@ Everything below is implemented and shipping in the app.
 - **Written immediately** over Bluetooth as you change each control - most are single commands with no separate Save step.
 - **Lights** - headlight and ambient lighting.
 - **Ride** - gear (D/T), zero-start, turning cruise control off, km/h or mph, the cruise-speed cap and the throttle acceleration/brake sensitivity.
-- **Speed** - the global speed limit, on scooters that support a Bluetooth speed command (see [Device support](#device-support)).
+- **Speed** - the global speed limit, on scooters that support a Bluetooth speed command (see [Device support](#device-support)). Set the unlock value here; see [The speed unlock](#the-speed-unlock) for how it gets sent.
 - **System and motor parameters** - cruise timeout, auto-shutdown timer, wheel size, the motor controller's PWM carrier frequency, service interval, lock/unlock and a set of motor/controller parameters (modulation depth, pole pairs, discharge/brake current limits, under-voltage cutoff). The riskier ones ask you to confirm before writing, the same way the manufacturer app would.
 - **Name and sound** - set the Bluetooth advertised name and pick the start/shutdown/horn/alarm sound, on models with the AT command channel.
 - **A "?" help popup on every setting.**
 - **The shown state comes from the scooter**, not from the phone: the live telemetry drives every control, so what you see is what the scooter currently reports.
 - **The firmware has the last word.** The app sends the command and shows what comes back. A function your model or its firmware does not support stays without effect; the app does not pretend otherwise.
 - On the **Legacy "Scooter"** family only the gear switch and lock/unlock are shown; everything above that needs the fuller protocol is hidden rather than shown disabled.
+
+### The speed unlock
+
+On scooters that accept a Bluetooth speed command, triple-tap the km/h tile on the main screen to unlock or re-lock the speed. Unlock writes the value set on the Scooter settings page (default 60 km/h); triple-tapping again locks it back to a conservative default (22 km/h). The tile's colour follows this: green while locked, red once unlocked.
+
+That colour is the app's own memory of what it last sent, not a value the scooter reports back - the register this writes to has no readback on the wire, so there is no way to ask the scooter what its current limit actually is. The colour resets to green on every fresh connection, so a stale "unlocked" state never survives a reconnect.
+
+<p align="center"><img src="screenshots/speed-unlock.png" width="260" alt="Speed unlock - triple-tap the km/h tile to lock or unlock the speed limit over Bluetooth"></p>
 
 ### In-app updates
 
