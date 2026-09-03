@@ -55,8 +55,8 @@ Everything below is implemented and shipping in the app.
 
 - **Live speed drums** - side-by-side scooter speed and GPS speed.
 - **Hero tiles** - battery percentage, gear and battery current at a glance.
-- **Quick toggles** right below the tiles - headlight, ambient lighting, gear and cruise control. They are written to the scooter immediately, are greyed out while disconnected and colour in when the scooter reports the function as active, so you can see an accepted command at a glance.
 - **Vehicle and battery grid** - voltage, current, power, controller and motor temperature, battery temperature, capacity used/total, trip and total distance, Bluetooth signal strength and any active fault codes.
+- **Headlight, ambient lighting, gear, cruise control and the rest of the settings surface** live in the Scooter Settings sheet (see below), not as quick toggles on the main screen.
 
 ### "All values" telemetry (scroll down on the main screen)
 
@@ -67,18 +67,17 @@ Everything below is implemented and shipping in the app.
 ### Connection
 
 - **Bluetooth LE connect** with a Bluetooth-glyph indicator: **green = connected, red = disconnected**.
-- The scan shows every nearby Bluetooth LE device, since Trittbrett units advertise unpredictable, changing names - pick your scooter from the list. A model hint and an auto-detect preview help identify it before connecting.
+- The scan shows every nearby Bluetooth LE device, since Trittbrett units advertise unpredictable, changing names - pick your scooter from the list by name, address and signal strength. The protocol family and model are detected automatically once connected and shown on the Scooter info page.
 - **Remembers the last scooter and auto-reconnects.**
 - **"Last device" quick-reconnect** button.
-- An optional **PIN field** for scooters configured with the AT+PWD authentication channel (ZYD family only).
 
 ### Scooter settings
 
 - **Written immediately** over Bluetooth as you change each control - most are single commands with no separate Save step.
 - **Lights** - headlight and ambient lighting.
-- **Ride** - gear (D/T), zero-start, turning cruise control off, km/h or mph, the cruise-speed cap and the throttle acceleration/brake curves.
+- **Ride** - gear (D/T), zero-start, turning cruise control off, km/h or mph, the cruise-speed cap and the throttle acceleration/brake sensitivity.
 - **Speed** - the global speed limit, on scooters that support a Bluetooth speed command (see [Device support](#device-support)).
-- **System and motor parameters** - cruise timeout, auto-shutdown timer, wheel size, carrier weight class, service interval, lock/unlock and a set of motor/controller parameters (modulation depth, pole pairs, discharge/brake current limits, under-voltage cutoff). The riskier ones ask you to confirm before writing, the same way the manufacturer app would.
+- **System and motor parameters** - cruise timeout, auto-shutdown timer, wheel size, the motor controller's PWM carrier frequency, service interval, lock/unlock and a set of motor/controller parameters (modulation depth, pole pairs, discharge/brake current limits, under-voltage cutoff). The riskier ones ask you to confirm before writing, the same way the manufacturer app would.
 - **Name and sound** - set the Bluetooth advertised name and pick the start/shutdown/horn/alarm sound, on models with the AT command channel.
 - **A "?" help popup on every setting.**
 - **The shown state comes from the scooter**, not from the phone: the live telemetry drives every control, so what you see is what the scooter currently reports.
@@ -93,7 +92,7 @@ Everything below is implemented and shipping in the app.
 ### Info & diagnostics
 
 - **Error reports** view - the scooter reports a small set of numeric fault codes. The meaning of each individual code is not documented, so the app shows the **raw codes** and does not translate them. A claim about what a code means would be a guess and there is none in this app.
-- **Scooter info page**, read-only and read live over Bluetooth: the **Bluetooth name** and the controller **model, hardware, boot and firmware** strings the scooter reports. (The app version lives in the "Version Info & Disclaimer" entry, not here.)
+- **Scooter info page**, read live over Bluetooth: the **Bluetooth name**, the detected protocol **family**, the **display version**, the controller **model, hardware, boot and firmware** strings and the three **gear limits** the scooter reports. (The app version lives in the "Version Info & Disclaimer" entry, not here.) On the ZYD family this page is also where you set the **PIN** for scooters configured with the AT+PWD authentication channel and change the scooter's **Bluetooth name**.
 
 ### Screen streaming
 
@@ -123,11 +122,12 @@ Everything below is implemented and shipping in the app.
 
 ### Recording, logging & preferences
 
-- **GPS track recording** with a configurable interval (**1 / 2 / 5 / 10 / 30 s**) and **per-route GPX export**.
+- **GPS track recording** with a configurable interval (**1 / 2 / 5 / 10 / 30 s**) and **per-route GPX export**. An **auto-track toggle** starts recording on its own around 20 m into a ride and stops it when the scooter disconnects; turn it off if you would rather start recording by hand.
 - **Ride log** (**off by default**) - when enabled, it records **all main-screen values once per minute** while you ride. Recording only starts once you are actually moving (after the scooter's speed first goes above 0), so parking or connecting without riding produces no ride. It runs as a foreground service so it keeps recording with the screen off, keeps **all rides** (delete them individually or in bulk by period) and lets you export each ride as **CSV or JSON** from the Scooter Info page (via the Android share sheet).
 - **In-app debug logging** - persistent, with a red banner while active and an **export** button. No PC needed.
-- **Full-screen toggle** (when off, the app sits below the Android status bar), **km / mph** units (mph converts both speed and distance - Trip, Odometer and saved-route distances - to miles), **light / dark app theme** and a **"Version Info & Disclaimer"** entry.
+- **Full-screen toggle** (when off, the app sits below the Android status bar), **km / mph** units (mph converts both speed and distance - Trip, Odometer and saved-route distances - to miles), **light / dark app theme** with its own colour editor (tile colour, background and text brightness, kept separately for each theme) and a **"Version Info & Disclaimer"** entry.
 - **A language switch in the Display settings** turns the whole interface, help popups included, English or German. On the first start the app follows your phone's language and your choice sticks after that.
+- **"What is new"** in the Settings menu opens a short changelog of what changed in the current version.
 
 ## What the app deliberately does not do
 

@@ -551,6 +551,10 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
         <div class="settings-row-left"><div class="settings-row-label" data-i18n="info.scooter.fw.boot">Bootloader</div></div>
         <span class="note-md" id="info-fwboot">-</span>
       </div>
+      <div class="settings-row zyd-only">
+        <div class="settings-row-left"><div class="settings-row-label" data-i18n="info.scooter.gearlimits.label">Gear limits</div></div>
+        <span class="note-md" id="info-gearlimits">-</span>
+      </div>
     </div>
 
     <!-- ZYD only: PIN (AT+PWD, stored for the next connect) and the AT-channel BLE name. -->
@@ -1085,6 +1089,9 @@ function parseBLE(raw) {
         out.imperial    = !!d.imperial;
         out.lock        = !!d.lock;
         out.limitCruise = num(d.limitCruise);
+        out.m1          = num(d.m1);
+        out.m2          = num(d.m2);
+        out.m3          = num(d.m3);
       }
     }
     return out;
@@ -2483,6 +2490,8 @@ function renderInfoPage() {
   setTxt('info-fwmodel',     dash(d.fwModel));
   setTxt('info-fwhardware',  dash(d.fwHardware));
   setTxt('info-fwboot',      dash(d.fwBoot));
+  const m1 = d.m1, m2 = d.m2, m3 = d.m3;
+  setTxt('info-gearlimits', (m1 == null && m2 == null && m3 == null) ? '-' : (dash(m1) + ' / ' + dash(m2) + ' / ' + dash(m3) + ' km/h'));
 }
 
 // Copy the Bluetooth advertised name (from live BLE data) to the Android clipboard.

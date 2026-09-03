@@ -346,6 +346,9 @@ final class BleManager {
             if (newState == BluetoothGatt.STATE_CONNECTED) {
                 Log.i(TAG, "GATT connected");
                 pushState("discovering");
+                // ZYD monitor-A frames are up to 25 bytes (23 payload + 2 CRC), over the default
+                // ATT MTU's 20 usable bytes - request a bigger MTU so a frame is never truncated.
+                try { if (g != null) g.requestMtu(64); } catch (Throwable ignored) {}
                 main.postDelayed(() -> {
                     try { if (gatt != null) gatt.discoverServices(); } catch (Throwable ignored) {}
                 }, DISCOVER_DELAY_MS);
@@ -404,8 +407,17 @@ final class BleManager {
 
         @Override
         public void onCharacteristicWrite(BluetoothGatt g, BluetoothGattCharacteristic c, int status) {
+            // Only the data-channel queue (writeChar) is serialised this way; AT-channel writes
+            // (atWriteChar) go straight to the GATT layer and must not touch this flag/queue, or a
+            // completing AT write can race a still-in-flight data-channel write.
+            if (c != writeChar) return;
             synchronized (writeQueue) { writing = false; }
             main.postDelayed(BleManager.this::drainWriteQueue, WRITE_GAP_MS);
+        }
+
+        @Override
+        public void onMtuChanged(BluetoothGatt g, int mtu, int status) {
+            Log.i(TAG, "MTU changed to " + mtu + " status=" + status);
         }
 
         @Override

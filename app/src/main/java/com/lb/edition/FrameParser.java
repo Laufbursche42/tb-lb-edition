@@ -225,6 +225,9 @@ final class FrameParser {
                     o.put("imperial", settings.imperial);
                     o.put("lock", settings.lock);
                     o.put("limitCruise", settings.limitCruise);
+                    o.put("m1", settings.m1);
+                    o.put("m2", settings.m2);
+                    o.put("m3", settings.m3);
                 }
             }
         } catch (JSONException ignored) {

@@ -9,9 +9,17 @@ local.properties
 # IDE
 .idea/
 *.iml
+.vscode/
+*.bak
+*.suo
+*~
 # OS
 Thumbs.db
 .DS_Store
+# Logs
+*.log
+# Local env files - never commit
+.env
 # Signing / secrets - never commit
 *.keystore
 *.jks
@@ -26,3 +34,8 @@ analysis-tool/
 # Working notes for the port, not shipped
 prompt.md
 _portspec/
+NOTES.md
+PROTOCOL.md
+ANALYSIS.md
+# The app ships no screenshots
+screenshots/
