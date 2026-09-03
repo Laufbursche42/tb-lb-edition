@@ -6,6 +6,8 @@ An alternative app for Trittbrett e-scooters.
 
 Download the app: **[latest release](https://github.com/Laufbursche42/tb-lb-edition/releases/latest)** - install the `tb-lb-edition-vX.apk` from the assets there.
 
+**Using an iPhone?** This app is Android only. On iOS there is a browser-based alternative that speaks the same protocol over Web Bluetooth: **[tb-unlock](https://laufbursche42.github.io/tb-unlock/)**, opened in the Bluefy browser. No install, same functions.
+
 ## Table of contents
 
 - [For users](#for-users)
