@@ -426,25 +426,26 @@ html, body {
 /* Motor tiles: ESC temp, motor temp, power - one row. */
 #motor-area { display: flex; flex-direction: column; gap: var(--gap); }
 
-/* Quick toggles (ZYD only): headlight, ambient, zero-start, gear - four equal pill buttons,
-   written immediately on tap. The "on" class reflects the live base-param state. */
-#quick-toggles {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap);
-}
+/* Quick toggles (ZYD only): headlight, ambient, zero-start, cruise-off - four equal flat text
+   buttons in one row, same shape as the base app's #drive-quick/#motor-quick. Written
+   immediately on tap; the "on" class reflects the live base-param state. */
+#quick-toggles { display: flex; gap: var(--gap); container-type: inline-size; }
 .qt-btn {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 10px 4px;
-  display: flex; flex-direction: column; align-items: center; gap: 4px;
-  color: var(--label); font-family: inherit;
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  flex: 1 1 0; min-width: 0; padding: 8px 1px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--card); color: var(--label);
+  font-size: clamp(7px, 3.4cqi, 12px); font-weight: var(--fw-bold); line-height: 1.1;
+  font-family: inherit; white-space: nowrap; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
-.qt-btn:disabled { opacity: .45; cursor: default; }
-.qt-btn .qt-icon { font-size: 22px; line-height: 1; }
-.qt-btn .qt-gear-val { font-size: var(--fs-lg); font-weight: var(--fw-heavy); color: var(--value); }
-.qt-btn .qt-label { font-size: var(--fs-xs); font-weight: var(--fw-semibold); letter-spacing: .02em; }
-.qt-btn.on { border-color: var(--good); background: color-mix(in srgb, var(--good) 14%, var(--card)); }
-.qt-btn.on .qt-label { color: var(--good); }
-.qt-btn.on .qt-gear-val { color: var(--good); }
+.qt-btn:active { opacity: .7; }
+.qt-btn.on { background: var(--btnfill); color: #0A0C10; border-color: var(--btnfill); }
+/* Cruise-off while cruise is not active: nothing to turn off, so mark it unavailable (still
+   tappable, it is simply a no-op - unlike disconnected, this is not an error worth a toast). */
+.qt-btn.qt-locked { opacity: .45; }
+/* Not connected: whole row greyed and non-interactive-looking, but still clickable so a tap
+   shows the "Connect the scooter first" toast instead of doing nothing. */
+#quick-toggles.qt-disabled { opacity: .4; filter: grayscale(1); }
 
 /* LEGACY family: explanatory note where the Speed card would otherwise sit. */
 #legacy-note {

@@ -173,6 +173,12 @@ public class MainActivity extends Activity {
                 boolean local = origin != null && origin.startsWith("file://");
                 callback.invoke(origin, local, false);
             }
+
+            @Override
+            public boolean onConsoleMessage(android.webkit.ConsoleMessage cm) {
+                Log.i(TAG, "JS console: " + cm.message() + " (" + cm.sourceId() + ":" + cm.lineNumber() + ")");
+                return true;
+            }
         });
     }
 

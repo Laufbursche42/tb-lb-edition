@@ -98,30 +98,17 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
       </div>
     </div>
 
-    <!-- Quick toggles (ZYD only): headlight, ambient light, zero-start and gear, written
-         immediately over BLE via sendSetting. Speed unlock/lock moved to a triple-tap on the
-         km/h · BLE tile above (see bleDrumTripleTap) - it needs no permanent screen space and
-         mirrors how the original app's speed-lock gesture worked. -->
-    <div class="section-hdr sub-hdr zyd-only">
-      <span data-i18n="dash.quick.section">Quick toggles</span>
-    </div>
-    <div id="quick-toggles" class="zyd-only">
-      <button type="button" class="qt-btn" id="qt-headlight" data-key="headlight">
-        <span class="qt-icon" aria-hidden="true">&#128161;</span>
-        <span class="qt-label" data-i18n="dash.quick.headlight">Light</span>
-      </button>
-      <button type="button" class="qt-btn" id="qt-ambient" data-key="ambient">
-        <span class="qt-icon" aria-hidden="true">&#10024;</span>
-        <span class="qt-label" data-i18n="dash.quick.ambient">Ambient</span>
-      </button>
-      <button type="button" class="qt-btn" id="qt-zerostart" data-key="zeroStart">
-        <span class="qt-icon" aria-hidden="true">&#128736;</span>
-        <span class="qt-label" data-i18n="dash.quick.zerostart">Kickstart</span>
-      </button>
-      <button type="button" class="qt-btn" id="qt-gear" data-key="gear">
-        <span class="qt-icon qt-gear-val" aria-hidden="true">D</span>
-        <span class="qt-label" data-i18n="dash.quick.gear">Gear</span>
-      </button>
+    <!-- Quick toggles (ZYD only): headlight, ambient light, zero-start and cruise-off, written
+         immediately over BLE via sendSetting - same flat single-row button style as the base
+         app's #drive-quick/#motor-quick. Gear already has its own hero tile above, so it is not
+         repeated here. Speed unlock/lock moved to a triple-tap on the km/h · BLE tile above (see
+         bleDrumTripleTap) - it needs no permanent screen space and mirrors how the original app's
+         speed-lock gesture worked. -->
+    <div id="quick-toggles" class="zyd-only" role="group" aria-label="Quick toggles" data-i18n-aria="dash.quick.group">
+      <button type="button" class="qt-btn" id="qt-headlight" data-key="headlight" data-i18n="dash.quick.headlight">Light</button>
+      <button type="button" class="qt-btn" id="qt-ambient" data-key="ambient" data-i18n="dash.quick.ambient">Ambient</button>
+      <button type="button" class="qt-btn" id="qt-zerostart" data-key="zeroStart" data-i18n="dash.quick.zerostart">Kickstart</button>
+      <button type="button" class="qt-btn" id="qt-cruiseoff" data-key="cruiseOff" data-i18n="dash.quick.cruiseoff">Cruise off</button>
     </div>
 
     <!-- LEGACY family: no BLE speed command exists on this model - explain it where the quick
@@ -3103,30 +3090,29 @@ function bleDrumTripleTap() {
   } catch (e) { showToast(tf('msg2.toast.error', { e: e })); }
 }
 
-/* ── Quick toggles (ZYD only): headlight, ambient, zero-start, gear - written immediately, no
-   separate Send step (unlike the full Scooter settings sheet). */
-const QUICK_TOGGLE_KEYS = ['headlight', 'ambient', 'zeroStart', 'gear'];
+/* ── Quick toggles (ZYD only): headlight, ambient, zero-start, cruise-off - written immediately,
+   no separate Send step (unlike the full Scooter settings sheet). Gear already has its own hero
+   tile, so it is not duplicated here; cruiseOff is a one-shot button (the app can only ever turn
+   cruise off, never on), disabled whenever cruise is not currently active. */
+const QUICK_TOGGLE_KEYS = ['headlight', 'ambient', 'zeroStart', 'cruiseOff'];
 
 function quickToggleTap(key) {
   if (!state.bleConnected) { showToast(t('msg2.toast.connect_scooter_first')); return; }
   const d = state.ble || {};
-  if (key === 'gear') { pushSetting('gear', d.gear === 1 ? 0 : 1); return; }
+  if (key === 'cruiseOff') { if (d.cruise) pushSetting('cruiseOff', true); return; }
   if (key === 'zeroStart') { pushSetting('zeroStart', !!d.boot); return; }   // inverted, see native side
   pushSetting(key, !d[key]);
 }
 
 function updateQuickToggles(data) {
+  const box = document.getElementById('quick-toggles');
   const ready = !!(data && data.family !== 'LEGACY' && data.settingsReady);
+  if (box) box.classList.toggle('qt-disabled', !ready);
   QUICK_TOGGLE_KEYS.forEach(key => {
-    const btn = document.getElementById('qt-' + (key === 'zeroStart' ? 'zerostart' : key));
+    const btn = document.getElementById('qt-' + key.toLowerCase());
     if (!btn) return;
-    btn.disabled = !ready;
-    if (!ready) { btn.classList.remove('on'); return; }
-    if (key === 'gear') {
-      btn.classList.toggle('on', data.gear === 1);
-      const val = btn.querySelector('.qt-gear-val'); if (val) val.textContent = data.gear === 1 ? 'T' : 'D';
-      return;
-    }
+    if (!ready) { btn.classList.remove('on', 'qt-locked'); return; }
+    if (key === 'cruiseOff') { btn.classList.toggle('qt-locked', !data.cruise); return; }
     if (key === 'zeroStart') { btn.classList.toggle('on', !data.boot); return; }
     btn.classList.toggle('on', !!data[key]);
   });
@@ -3276,7 +3262,7 @@ function wireEvents() {
   const qtBox = document.getElementById('quick-toggles');
   if (qtBox) qtBox.addEventListener('click', e => {
     const btn = e.target.closest && e.target.closest('.qt-btn');
-    if (btn && !btn.disabled) quickToggleTap(btn.dataset.key);
+    if (btn) quickToggleTap(btn.dataset.key);
   });
 
   // Unlock-speed preference (local only - read by the triple-tap gesture, not sent by itself).
