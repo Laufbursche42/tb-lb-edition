@@ -47,7 +47,7 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
 
     <!-- Speed Drums -->
     <div id="speed-row">
-      <div class="speed-drum ble-drum">
+      <div class="speed-drum ble-drum" id="ble-drum" role="button" tabindex="0" aria-label="Triple-tap to unlock or lock the speed limit" data-i18n-aria="dash.speed.ble.tripletap.aria">
         <div class="sd-val" id="ble-speed">-</div>
         <div class="sd-unit" data-i18n="dash.speed.vcu.unit">km/h &middot; VCU</div>
       </div>
@@ -98,22 +98,34 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
       </div>
     </div>
 
-    <!-- Speed-limit quick card (ZYD only: dedicated LB.setSpeed unlock/lock buttons). -->
-    <div id="speed-card" class="zyd-only">
-      <div class="sc-row">
-        <span class="sc-label" data-i18n="dash.speedcard.label">Speed limit</span>
-        <button type="button" class="set-help" data-set-help="speed-card" aria-label="What is this?" data-i18n-aria="dash.help.what" data-i18n="dash.help.icon">?</button>
-        <input class="set-ctrl" id="sc-speed" type="number" min="0" max="60" step="1" inputmode="numeric">
-        <span class="sc-unit">km/h</span>
-      </div>
-      <div class="row-8">
-        <button type="button" class="grow" id="sc-unlock" data-i18n="dash.speedcard.unlock">Unlock</button>
-        <button type="button" class="grow" id="sc-lock" data-i18n="dash.speedcard.lock">Lock (22)</button>
-      </div>
+    <!-- Quick toggles (ZYD only): headlight, ambient light, zero-start and gear, written
+         immediately over BLE via sendSetting. Speed unlock/lock moved to a triple-tap on the
+         km/h · BLE tile above (see bleDrumTripleTap) - it needs no permanent screen space and
+         mirrors how the original app's speed-lock gesture worked. -->
+    <div class="section-hdr sub-hdr zyd-only">
+      <span data-i18n="dash.quick.section">Quick toggles</span>
+    </div>
+    <div id="quick-toggles" class="zyd-only">
+      <button type="button" class="qt-btn" id="qt-headlight" data-key="headlight">
+        <span class="qt-icon" aria-hidden="true">&#128161;</span>
+        <span class="qt-label" data-i18n="dash.quick.headlight">Light</span>
+      </button>
+      <button type="button" class="qt-btn" id="qt-ambient" data-key="ambient">
+        <span class="qt-icon" aria-hidden="true">&#10024;</span>
+        <span class="qt-label" data-i18n="dash.quick.ambient">Ambient</span>
+      </button>
+      <button type="button" class="qt-btn" id="qt-zerostart" data-key="zeroStart">
+        <span class="qt-icon" aria-hidden="true">&#128736;</span>
+        <span class="qt-label" data-i18n="dash.quick.zerostart">Kickstart</span>
+      </button>
+      <button type="button" class="qt-btn" id="qt-gear" data-key="gear">
+        <span class="qt-icon qt-gear-val" aria-hidden="true">D</span>
+        <span class="qt-label" data-i18n="dash.quick.gear">Gear</span>
+      </button>
     </div>
 
-    <!-- LEGACY family: no BLE speed command exists on this model - explain it where the Speed
-         card would otherwise be. -->
+    <!-- LEGACY family: no BLE speed command exists on this model - explain it where the quick
+         toggles would otherwise be. -->
     <div id="legacy-note" class="legacy-only" data-i18n="dash.legacy.nospeed">
       This model has no BLE speed command.
     </div>
@@ -447,6 +459,17 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
           <button type="button" class="mini-send-btn" id="scoot-unlock" data-i18n="scooter.lock.unlock">Unlock</button>
           <button type="button" class="mini-send-btn" id="scoot-lock-btn" data-i18n="scooter.lock.lock">Lock</button>
         </div>
+      </div>
+      <!-- Local preference only, not sent by itself: the value the main-screen triple-tap-unlock
+           gesture writes (register 0x20). Locking always writes back the fixed eKFV default. -->
+      <div class="settings-row zyd-only">
+        <div class="settings-row-left">
+          <div class="settings-row-label" data-i18n="scooter.speed.unlock.label">Unlock speed</div>
+          <div class="settings-row-sublabel" data-i18n="scooter.speed.unlock.sublabel">Triple-tap the km/h tile on the main screen to unlock or lock</div>
+        </div>
+        <button type="button" class="set-help" data-set-help="scoot-speed-unlock" aria-label="What is this?" data-i18n-aria="scooter.help.hint">?</button>
+        <input class="set-ctrl" id="pref-unlock-speed" type="number" min="1" max="60" step="1" inputmode="numeric">
+        <span class="sc-unit">km/h</span>
       </div>
     </div>
 
@@ -1152,7 +1175,7 @@ const SETTINGS_HELP = {
   "dg-pts": { title: 'msg.help.set.dg.pts.title', text: 'msg.help.set.dg.pts.text' },
   "scoot-gear": { title: 'scooter.drive.gear.label', text: 'tb.help.gear.text' },
   "scoot-lock": { title: 'scooter.lock.label', text: 'tb.help.lock.text' },
-  "speed-card": { title: 'dash.speedcard.label', text: 'tb.help.speedcard.text' },
+  "scoot-speed-unlock": { title: 'scooter.speed.unlock.label', text: 'tb.help.speedunlock.text' },
   "info-pin": { title: 'info.scooter.pin.label', text: 'tb.help.pin.text' },
   "info-name": { title: 'info.scooter.name.label', text: 'tb.help.name.text' }
 };
@@ -1218,6 +1241,7 @@ function updateBLEUI(data) {
   if (!data) {
     DASH.forEach(id => setTxt(id, '-'));
     setLegacyUi(false);
+    updateQuickToggles(null);
     return;
   }
 
@@ -1236,6 +1260,7 @@ function updateBLEUI(data) {
   if (!connected) {
     DASH.forEach(id => setTxt(id, '-'));
     setLegacyUi(false);
+    updateQuickToggles(null);
     return;
   }
 
@@ -1300,14 +1325,11 @@ function updateBLEUI(data) {
     const lockEl = document.getElementById('dg-lock');
     if (lockEl) lockEl.style.color = data.lock ? 'var(--danger)' : 'var(--good)';
     setTxt('dg-cruise', data.cruise ? t('dash.grid.cruise.on') : t('dash.grid.cruise.off'));
-    const scInput = document.getElementById('sc-speed');
-    if (scInput && document.activeElement !== scInput && !scInput.dataset.dirty) {
-      scInput.value = data.limitCruise != null ? data.limitCruise : '';
-    }
   } else {
     setTxt('dg-lock', '-');
     setTxt('dg-cruise', '-');
   }
+  updateQuickToggles(data);
 
   // Scooter-settings page: keep the generated fields live while the page is open.
   try { maybeLiveRefreshScooterFields(); } catch (e) {}
@@ -1331,6 +1353,9 @@ function onBLEConnectionChange(nowConnected) {
     state.armDistM = 0;
     state.armLastTs = null;
     state.rideStopped = false;
+    _speedUnlocked = false;
+    _bleDrumTaps = 0;
+    const drum = document.getElementById('ble-drum'); if (drum) drum.classList.remove('unlocked');
   } else {
     // BLE dropped (manual disconnect or the scooter powered off - same thing): always finalize
     // the ride and stop GPS.
@@ -3047,22 +3072,64 @@ function scootSetLock(unlock) {
   catch (e) { showToast(tf('msg2.toast.error', { e: e })); }
 }
 
-/* ── Speed card (ZYD only): dedicated LB.setSpeed unlock/lock quick buttons ── */
+/* ── Speed unlock/lock (ZYD only): triple-tap the km/h · BLE tile, same gesture the original
+   app used for its speed-lock tile. There is no live echo of the register-write result (the
+   protocol has no readback for it), so the "unlocked" state is purely local UI memory, reset
+   on every fresh connection so a stale state never survives a reconnect. */
 const SPEED_LOCK_DEFAULT = 22;
-function speedCardUnlock() {
-  const inp = document.getElementById('sc-speed');
-  const v = inp ? parseFloat(inp.value) : NaN;
-  if (isNaN(v)) { showToast(t('msg2.settings.toast.no_changes')); return; }
-  if (typeof LB === 'undefined' || !LB.setSpeed) { showToast(t('msg.app.only.in.app')); return; }
-  if (!state.bleConnected) { showToast(t('msg2.toast.connect_scooter_first')); return; }
-  try { LB.setSpeed(v); if (inp) delete inp.dataset.dirty; showToast(t('msg2.settings.toast.saved')); }
-  catch (e) { showToast(tf('msg2.toast.error', { e: e })); }
+const SPEED_UNLOCK_DEFAULT = 60;
+
+function unlockSpeedPref() {
+  const v = parseFloat(storage.get('lb_unlock_speed'));
+  return (v > 0 && v <= 60) ? v : SPEED_UNLOCK_DEFAULT;
 }
-function speedCardLock() {
+
+let _bleDrumTaps = 0, _bleDrumTapTimer = null, _speedUnlocked = false;
+
+function bleDrumTripleTap() {
+  if (state.ble && state.ble.family === 'LEGACY') { showToast(t('dash.legacy.nospeed')); return; }
   if (typeof LB === 'undefined' || !LB.setSpeed) { showToast(t('msg.app.only.in.app')); return; }
   if (!state.bleConnected) { showToast(t('msg2.toast.connect_scooter_first')); return; }
-  try { LB.setSpeed(SPEED_LOCK_DEFAULT); showToast(t('msg2.settings.toast.saved')); }
-  catch (e) { showToast(tf('msg2.toast.error', { e: e })); }
+  clearTimeout(_bleDrumTapTimer);
+  _bleDrumTaps++;
+  if (_bleDrumTaps < 3) { _bleDrumTapTimer = setTimeout(() => { _bleDrumTaps = 0; }, 600); return; }
+  _bleDrumTaps = 0;
+  _speedUnlocked = !_speedUnlocked;
+  const v = _speedUnlocked ? unlockSpeedPref() : SPEED_LOCK_DEFAULT;
+  try {
+    LB.setSpeed(v);
+    document.getElementById('ble-drum').classList.toggle('unlocked', _speedUnlocked);
+    showToast(_speedUnlocked ? tf('dash.speed.unlocked.toast', { v: v }) : tf('dash.speed.locked.toast', { v: v }));
+  } catch (e) { showToast(tf('msg2.toast.error', { e: e })); }
+}
+
+/* ── Quick toggles (ZYD only): headlight, ambient, zero-start, gear - written immediately, no
+   separate Send step (unlike the full Scooter settings sheet). */
+const QUICK_TOGGLE_KEYS = ['headlight', 'ambient', 'zeroStart', 'gear'];
+
+function quickToggleTap(key) {
+  if (!state.bleConnected) { showToast(t('msg2.toast.connect_scooter_first')); return; }
+  const d = state.ble || {};
+  if (key === 'gear') { pushSetting('gear', d.gear === 1 ? 0 : 1); return; }
+  if (key === 'zeroStart') { pushSetting('zeroStart', !!d.boot); return; }   // inverted, see native side
+  pushSetting(key, !d[key]);
+}
+
+function updateQuickToggles(data) {
+  const ready = !!(data && data.family !== 'LEGACY' && data.settingsReady);
+  QUICK_TOGGLE_KEYS.forEach(key => {
+    const btn = document.getElementById('qt-' + (key === 'zeroStart' ? 'zerostart' : key));
+    if (!btn) return;
+    btn.disabled = !ready;
+    if (!ready) { btn.classList.remove('on'); return; }
+    if (key === 'gear') {
+      btn.classList.toggle('on', data.gear === 1);
+      const val = btn.querySelector('.qt-gear-val'); if (val) val.textContent = data.gear === 1 ? 'T' : 'D';
+      return;
+    }
+    if (key === 'zeroStart') { btn.classList.toggle('on', !data.boot); return; }
+    btn.classList.toggle('on', !!data[key]);
+  });
 }
 
 /* ── First-screen fold ────────────────────────────────────────
@@ -3202,11 +3269,27 @@ function wireEvents() {
   document.getElementById('scoot-unlock').addEventListener('click', () => scootSetLock(true));
   document.getElementById('scoot-lock-btn').addEventListener('click', () => scootSetLock(false));
 
-  // Speed card (main dashboard): dedicated unlock/lock quick buttons.
-  document.getElementById('sc-unlock').addEventListener('click', speedCardUnlock);
-  document.getElementById('sc-lock').addEventListener('click', speedCardLock);
-  const scSpeedInput = document.getElementById('sc-speed');
-  if (scSpeedInput) scSpeedInput.addEventListener('input', () => { scSpeedInput.dataset.dirty = '1'; });
+  // Speed unlock/lock: triple-tap the km/h · BLE tile on the main screen (ZYD only).
+  document.getElementById('ble-drum').addEventListener('click', bleDrumTripleTap);
+
+  // Quick toggles (main dashboard): headlight, ambient, zero-start, gear - written immediately.
+  const qtBox = document.getElementById('quick-toggles');
+  if (qtBox) qtBox.addEventListener('click', e => {
+    const btn = e.target.closest && e.target.closest('.qt-btn');
+    if (btn && !btn.disabled) quickToggleTap(btn.dataset.key);
+  });
+
+  // Unlock-speed preference (local only - read by the triple-tap gesture, not sent by itself).
+  const prefUnlock = document.getElementById('pref-unlock-speed');
+  if (prefUnlock) {
+    prefUnlock.value = unlockSpeedPref();
+    prefUnlock.addEventListener('change', () => {
+      const v = parseInt(prefUnlock.value, 10);
+      const clamped = (v > 0 && v <= 60) ? v : SPEED_UNLOCK_DEFAULT;
+      prefUnlock.value = clamped;
+      storage.set('lb_unlock_speed', String(clamped));
+    });
+  }
 
   // Read error reports: show current active faults/errors from live BLE data (requires connection).
   document.getElementById('btn-error-reports').addEventListener('click', () => {
