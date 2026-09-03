@@ -30,7 +30,7 @@ REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
 cd "$REPO_ROOT" || exit 0
 
 # Match the project's documented build environment.
-JAVA_HOME="C:\Program Files\Android\openjdk\jdk-21.0.8"
+JAVA_HOME="C:\Program Files\Eclipse Adoptium\jdk-21.0.12.8-hotspot"
 export JAVA_HOME
 export MSYS_NO_PATHCONV=1
 

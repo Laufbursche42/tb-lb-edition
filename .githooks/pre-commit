@@ -154,7 +154,7 @@ if [ "$JAVA_CHANGED" = "1" ]; then
     echo "SKIP  [java]  gradle compile skipped (SKIP_GRADLE set)"
   else
     echo "..    [java]  compiling changed Java (set SKIP_GRADLE=1 to skip this step) ..."
-    if JAVA_HOME="C:\Program Files\Android\openjdk\jdk-21.0.8" ./gradlew -q compileDebugJavaWithJavac; then
+    if JAVA_HOME="C:\Program Files\Eclipse Adoptium\jdk-21.0.12.8-hotspot" ./gradlew -q compileDebugJavaWithJavac; then
       echo "PASS  [java]  gradle compileDebugJavaWithJavac"
     else
       echo "FAIL  [java]  gradle compileDebugJavaWithJavac"
