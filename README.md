@@ -91,7 +91,7 @@ Everything below is implemented and shipping in the app.
 
 ### Info & diagnostics
 
-- **Error reports** view - the scooter reports a small set of numeric fault codes. The meaning of each individual code is not documented, so the app shows the **raw codes** and does not translate them. A claim about what a code means would be a guess and there is none in this app.
+- **Error reports** view - the scooter reports a small set of fault codes (E1, E2, E3, E4, E7, E9, F1, F2). Each shows its meaning from the official Trittbrett FAQ (trittbrett.eu/faq), which documents these for KALLE, EMMA, PAUL, SULTAN and FRITZ (not for HILDE). No meaning is invented beyond that source.
 - **Scooter info page**, read live over Bluetooth: the **Bluetooth name**, the detected protocol **family**, the **display version**, the controller **model, hardware, boot and firmware** strings and the three **gear limits** the scooter reports. (The app version lives in the "Version Info & Disclaimer" entry, not here.) On the ZYD family this page is also where you set the **PIN** for scooters configured with the AT+PWD authentication channel and change the scooter's **Bluetooth name**.
 
 ### Screen streaming
@@ -135,7 +135,7 @@ Naming the gaps is part of being honest about a feasibility study:
 
 - **No firmware flashing, no OTA and no firmware files of any kind.** The app never writes firmware to the scooter and never downloads any.
 - **No Bluetooth speed command on the Legacy "Scooter" family** - that generation's protocol does not have one, so the app does not pretend it does.
-- **No fault-code dictionary.** The raw codes are shown, nothing is invented around their meaning.
+- **No invented fault-code meanings.** The codes the app explains come straight from the official Trittbrett FAQ; a code that FAQ does not cover is shown with no explanation rather than a guess.
 - **No per-cell battery data, no dual-motor or motor-mode controls and no per-gear profile editor beyond the three gear speed limits Trittbrett itself reports** - the protocol as observed here does not offer more than that.
 
 ## Installing the app

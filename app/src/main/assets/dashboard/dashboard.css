@@ -140,12 +140,12 @@ html, body {
 
 /* ── Speed Drums ───────────────────────────────────────────── */
 #speed-row {
-  display: grid; grid-template-columns: 1fr 1fr;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--gap);
 }
 .speed-drum {
   background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 12px 10px 10px;
+  border-radius: var(--radius); padding: 12px 10px 10px; min-width: 0;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 2px;
 }
@@ -170,13 +170,14 @@ html, body {
 /* ── Hero Metrics ──────────────────────────────────────────── */
 /* Hero cells and motor cells are the same kind of tile row, so they share one grid. */
 #hero-row, #motor-row, #motor-row-2 {
-  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--gap);
 }
 .hero-cell {
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 12px 8px 10px;
   display: flex; flex-direction: column; align-items: center;
+  min-width: 0;
 }
 .hero-cell .hc-val {
   font-size: clamp(28px, 9vw, 38px); font-weight: var(--fw-heavy);
@@ -184,7 +185,7 @@ html, body {
   font-variant-numeric: tabular-nums;
 }
 .hero-cell .hc-unit {
-  font-size: var(--fs-md); color: var(--label); margin-top: 3px; white-space: nowrap;
+  font-size: var(--fs-md); color: var(--label); margin-top: 3px; text-align: center;
 }
 #soc-val { color: var(--good); }
 #gear-val { color: var(--warn); }
@@ -412,7 +413,7 @@ html, body {
 /* #motor-row takes the three-column tile grid shared with #hero-row. */
 .motor-cell {
   background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 10px 8px;
+  border-radius: var(--radius); padding: 10px 8px; min-width: 0;
   display: flex; flex-direction: column; align-items: center; gap: 2px;
 }
 .mc-title { font-size: var(--fs-sm); font-weight: var(--fw-bold); color: var(--label); letter-spacing: .06em; }

@@ -512,6 +512,9 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
     </div>
     <div id="err-list"></div>
     <div class="is-hidden" id="err-empty" data-i18n="info.errors.empty">No active errors</div>
+    <div class="settings-row-sublabel mt-14 lh-15" data-i18n="info.errors.source">
+      Code meanings from the official Trittbrett FAQ (trittbrett.eu/faq), confirmed for KALLE, EMMA, PAUL, SULTAN and FRITZ. Not listed there for HILDE; codes not shown here have no documented meaning at all.
+    </div>
   </div>
 </div>
 
@@ -2439,12 +2442,22 @@ function closeScooterPage() {
 }
 
 /* ── Error reports (active faults from live BLE data) ── */
-/* `faults` is an array of short controller-reported codes (e.g. "E1", "F2"). No per-code meaning
-   is documented, so the codes are shown as-is rather than guessing a translation for them. */
+/* `faults` is an array of short controller-reported codes (e.g. "E1", "F2"). Meanings below come
+   from the official Trittbrett FAQ (trittbrett.eu/faq, retrieved 2026-09), which lists them for
+   KALLE/EMMA/PAUL and, with fewer codes, SULTAN/FRITZ - HILDE is not covered there. A code not in
+   this map (or on a model the FAQ does not list it for) falls back to the generic subtitle rather
+   than a guess. */
+const FAULT_TEXT_KEY = {
+  E1: 'tb.fault.e1.text', E2: 'tb.fault.e2.text', E3: 'tb.fault.e3.text', E4: 'tb.fault.e4.text',
+  E7: 'tb.fault.e7.text', E9: 'tb.fault.e9.text', F1: 'tb.fault.f1.text', F2: 'tb.fault.f2.text',
+};
 function collectErrors() {
   const d = liveRaw();
   const arr = Array.isArray(d.faults) ? d.faults : [];
-  return arr.filter(c => c != null && c !== '').map(code => ({ kind: 'fault', title: String(code), sub: t('info.errors.code.sub') }));
+  return arr.filter(c => c != null && c !== '').map(code => {
+    const key = FAULT_TEXT_KEY[String(code).toUpperCase()];
+    return { kind: 'fault', title: String(code), sub: key ? t(key) : t('info.errors.code.sub') };
+  });
 }
 
 function renderErrorReports() {
@@ -3129,7 +3142,9 @@ function updateQuickToggles(data) {
    on the right value. */
 
 const FOLD_MIN_SCALE = 0.55;   // below this the labels stop being readable, so allow a scroll instead
-const FOLD_MAX_SCALE = 1.5;    // above this the tiles look inflated on a tall screen
+const FOLD_MAX_SCALE = 2.0;    // above this the tiles look inflated on a tall screen; raised from
+                                // 1.5 after the fold lost the speed-card row, which used to fill
+                                // this same space on a typical phone
 const FOLD_BOTTOM_GAP = 5;     // breathing room between the last button row and the screen edge
 
 let _foldScale = 0;            // last applied factor, 0 = never fitted
@@ -3147,9 +3162,14 @@ function fitFold() {
   if (!(avail > 0)) return;
 
   // offsetHeight is the LAYOUT height and ignores the transform, so the factor can be recomputed
-  // without first removing the one already applied.
+  // without first removing the one already applied. This is a fixed-point iteration (a narrower
+  // width wraps more text, which changes the natural height, which changes the target scale,
+  // which changes the width again); two passes converged fine over the old [0.55, 1.5] range, but
+  // land short of it when the starting guess (the previous scale, or 1 on first run) is far from
+  // the answer - which got common once a smaller fold pushed the ceiling up to 2.0. More passes
+  // cost nothing (this only reflows a detached-from-scroll transform, not the visible page).
   let scale = _foldScale || 1;
-  for (let pass = 0; pass < 2; pass++) {
+  for (let pass = 0; pass < 6; pass++) {
     inner.style.width = (100 / scale) + '%';
     const natural = inner.offsetHeight;
     if (!(natural > 0)) return;

@@ -25,7 +25,7 @@ window.I18N = {
       "<b>Speed unlock by triple-tap.</b> Triple-tap the km/h tile on the main screen to unlock or lock the speed limit; the unlock value is set in Scooter settings. Only works on scooters that accept a BLE speed command.",
       "<b>Quick toggles on the main screen.</b> Headlight, ambient light, kickstart and cruise-off are one tap away, right below the motor tiles.",
       "<b>Settings, one row at a time.</b> Light, ride, motor, system and sound settings each get their own field and their own Send button: nothing is written until you press Send, and risky motor/config parameters ask for confirmation first.",
-      "<b>Fault codes instead of guessed meanings.</b> The scooter's own fault codes are shown as-is, without an invented translation for codes this app cannot verify.",
+      "<b>Fault codes explained, from Trittbrett's own FAQ.</b> Each fault code shows its meaning from the official Trittbrett FAQ, not a guess; a code that FAQ does not cover is shown with no explanation.",
     ],
 
     'disclaimer.points': [
@@ -132,6 +132,7 @@ window.I18N = {
     "info.errors.code.sub": "Code reported by the controller",
     "info.errors.empty": "No active errors",
     "info.errors.hint": "Active fault codes read live from the scooter (BLE). No server involved.",
+    "info.errors.source": "Code meanings from the official Trittbrett FAQ (trittbrett.eu/faq), confirmed for KALLE, EMMA, PAUL, SULTAN and FRITZ. Not listed there for HILDE; codes not shown here have no documented meaning at all.",
     "info.errors.title": "Error reports",
     "info.nav.back": "Back",
     "info.ridelog.delete.24h": "&lt;24h",
@@ -367,6 +368,15 @@ window.I18N = {
     "settings.whatsnew": "&#10024; What is new",
     "settings.whatsnew.sub": "What changed in this version",
 
+    "tb.fault.e1.text": "Brake error. Check the brake lever connection; replace the brake lever if the fault stays.",
+    "tb.fault.e2.text": "Motor error. Check all plug connections; replace the motor if the fault stays.",
+    "tb.fault.e3.text": "Communication error. Check all plug connections; replace the controller if the fault stays. (KALLE/EMMA/PAUL only.)",
+    "tb.fault.e4.text": "Voltage error. Check all plug connections; replace the battery or controller if the fault stays. (KALLE/EMMA/PAUL only.)",
+    "tb.fault.e7.text": "Unspecified error. Check all plug connections. (KALLE/EMMA/PAUL only.)",
+    "tb.fault.e9.text": "Controller error. Replace the controller. (KALLE/EMMA/PAUL only.)",
+    "tb.fault.f1.text": "Brake error, same as E1. Check the brake lever connection; replace the brake lever if the fault stays.",
+    "tb.fault.f2.text": "Motor error, same as E2. Check all plug connections; replace the motor if the fault stays.",
+
     "tb.field.alarmSound.label": "Alarm sound",
     "tb.field.ambient.label": "Ambient light",
     "tb.field.brakeCur.label": "Brake current limit",
@@ -435,7 +445,7 @@ window.I18N = {
       "<b>Geschwindigkeit entsperren per Dreifach-Tipp.</b> Dreifach auf die km/h-Kachel auf dem Hauptbildschirm tippen, um die Geschwindigkeitsgrenze zu entsperren oder zu sperren; der Entsperrwert wird in den Scooter-Einstellungen festgelegt. Funktioniert nur bei Scootern, die einen BLE-Geschwindigkeitsbefehl annehmen.",
       "<b>Schnellzugriff auf dem Hauptbildschirm.</b> Licht, Ambientelicht, Kickstart und Tempomat aus sind einen Tipp entfernt, direkt unter den Motorkacheln.",
       "<b>Einstellungen, ein Feld nach dem anderen.</b> Licht-, Fahr-, Motor-, System- und Sound-Einstellungen bekommen je ein eigenes Feld und einen eigenen Senden-Button: nichts wird geschrieben, bevor du auf Senden drückst, und riskante Motor-/Konfigurationsparameter fragen vorher noch einmal nach.",
-      "<b>Fehlercodes statt geratener Bedeutung.</b> Die Fehlercodes des Scooters werden unverändert angezeigt, ohne erfundene Übersetzung für Codes, die diese App nicht prüfen kann.",
+      "<b>Fehlercodes erklärt, direkt aus der Trittbrett-FAQ.</b> Jeder Fehlercode zeigt seine Bedeutung aus der offiziellen Trittbrett-FAQ, keine Vermutung; ein Code, den diese FAQ nicht abdeckt, wird ohne Erklärung angezeigt.",
     ],
 
     'disclaimer.points': [
@@ -542,6 +552,7 @@ window.I18N = {
     "info.errors.code.sub": "Vom Controller gemeldeter Code",
     "info.errors.empty": "Keine aktiven Fehler",
     "info.errors.hint": "Aktive Fehlercodes, live vom Scooter gelesen (BLE). Kein Server beteiligt.",
+    "info.errors.source": "Bedeutungen aus der offiziellen Trittbrett-FAQ (trittbrett.eu/faq), bestätigt für KALLE, EMMA, PAUL, SULTAN und FRITZ. Für HILDE dort nicht gelistet. Ein Code, der hier nicht auftaucht, hat keine dokumentierte Bedeutung.",
     "info.errors.title": "Fehlerberichte",
     "info.nav.back": "Zurück",
     "info.ridelog.delete.24h": "&lt;24h",
@@ -776,6 +787,15 @@ window.I18N = {
     "settings.version.info.action": "&#8505; Versionsinfo &amp; Haftungsausschluss",
     "settings.whatsnew": "&#10024; Was ist neu",
     "settings.whatsnew.sub": "Was sich in dieser Version geändert hat",
+
+    "tb.fault.e1.text": "Fehler Bremse. Bremshebelverbindung prüfen, den Bremshebel austauschen, wenn der Fehler bleibt.",
+    "tb.fault.e2.text": "Fehler Motor. Alle Steckverbindungen prüfen, den Motor austauschen, wenn der Fehler bleibt.",
+    "tb.fault.e3.text": "Fehler Kommunikation. Alle Steckverbindungen prüfen, den Controller austauschen, wenn der Fehler bleibt. (Nur KALLE/EMMA/PAUL.)",
+    "tb.fault.e4.text": "Fehler Spannung. Alle Steckverbindungen prüfen, Akku oder Controller austauschen, wenn der Fehler bleibt. (Nur KALLE/EMMA/PAUL.)",
+    "tb.fault.e7.text": "Nicht näher spezifizierter Fehler. Alle Steckverbindungen prüfen. (Nur KALLE/EMMA/PAUL.)",
+    "tb.fault.e9.text": "Fehler Controller. Controller austauschen. (Nur KALLE/EMMA/PAUL.)",
+    "tb.fault.f1.text": "Fehler Bremse, wie E1. Bremshebelverbindung prüfen, den Bremshebel austauschen, wenn der Fehler bleibt.",
+    "tb.fault.f2.text": "Fehler Motor, wie E2. Alle Steckverbindungen prüfen, den Motor austauschen, wenn der Fehler bleibt.",
 
     "tb.field.alarmSound.label": "Alarmton",
     "tb.field.ambient.label": "Ambientelicht",

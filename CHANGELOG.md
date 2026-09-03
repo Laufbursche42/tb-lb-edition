@@ -51,7 +51,7 @@ Unlike some sibling ports of this app, the in-app updater was kept: a banner in 
 ### What the pages read
 
 - **Dashboard and telemetry** - speed, battery percentage, voltage, current, power, controller and motor temperature, trip and total distance, battery temperature, capacity used/total, fault codes and the firmware/display version, all from the ZYD monitor frames and the one-time controller-info read.
-- **Faults** - Trittbrett reports a small set of numeric fault bits. What each one means beyond its raw code is not documented, so the app lists the raw codes and does not invent an explanation.
+- **Faults** - Trittbrett reports a small set of fault codes. Each one shows its meaning from the official Trittbrett FAQ (trittbrett.eu/faq), documented there for KALLE, EMMA, PAUL, SULTAN and FRITZ; nothing is invented beyond that source.
 
 ### Taken out
 
