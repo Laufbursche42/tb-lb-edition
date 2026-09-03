@@ -77,6 +77,11 @@ public class MainActivity extends Activity {
         webView = new WebView(this);
         setContentView(webView);
 
+        // chrome://inspect access for the dashboard's JS - debug builds only, never in release.
+        if ((getApplicationInfo().flags & android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+            WebView.setWebContentsDebuggingEnabled(true);
+        }
+
         // Full-screen (immersive) is user-toggleable and persisted; default OFF. When off, the
         // Android status bar (battery / clock / notifications) shows and content sits below it.
         // Delegated to UiChrome so every screen (main + native) shares the exact same inset logic.
