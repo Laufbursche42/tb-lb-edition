@@ -3165,7 +3165,9 @@ function updateQuickToggles(data) {
    on the right value. */
 
 const FOLD_MIN_SCALE = 0.55;   // below this the labels stop being readable, so allow a scroll instead
-const FOLD_MAX_SCALE = 1.6;    // above this the hero/motor labels start wrapping to two lines
+const FOLD_MAX_SCALE = 1.75;   // measured fixed point that exactly fills the fold on a Pixel-size
+                                // screen (natural height 442px * 1.754 ~= avail 775px); above this
+                                // the hero/motor labels start wrapping to two lines
 const FOLD_BOTTOM_GAP = 5;     // breathing room between the last button row and the screen edge
 
 let _foldScale = 0;            // last applied factor, 0 = never fitted
