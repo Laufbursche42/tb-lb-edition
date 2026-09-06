@@ -168,21 +168,27 @@ html, body {
 .speed-drum.ble-drum.unlocked .sd-val { color: var(--danger); }
 
 /* ── Hero Metrics ──────────────────────────────────────────── */
-/* Hero cells and motor cells are the same kind of tile row, so they share one grid. */
+/* Hero cells and motor cells are the same kind of tile row. Flex (not a fixed 3-col grid) so a
+   tile hidden per family (e.g. the whole row on LEGACY) lets the rest reflow instead of leaving a
+   gap where a grid column used to be. */
 #hero-row, #motor-row, #motor-row-2 {
-  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  display: flex;
   gap: var(--gap);
 }
 .hero-cell {
+  flex: 1; min-width: 0;
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 12px 8px 10px;
   display: flex; flex-direction: column; align-items: center;
-  min-width: 0;
 }
+/* One uniform value size for every tile (hero and motor), hard-capped at 32px so no display or
+   font-scale setting can blow a value up. Words (e.g. a gear letter) and numbers share the same
+   size; anything too wide is clipped with an ellipsis rather than resized per tile. */
 .hero-cell .hc-val {
-  font-size: clamp(28px, 9vw, 38px); font-weight: var(--fw-heavy);
-  line-height: 1; letter-spacing: -.01em;
+  font-size: clamp(20px, 6.5vw, 32px); font-weight: var(--fw-heavy);
+  line-height: 1.05; letter-spacing: -.01em;
   font-variant-numeric: tabular-nums;
+  max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .hero-cell .hc-unit {
   font-size: var(--fs-md); color: var(--label); margin-top: 3px; text-align: center;
@@ -410,16 +416,18 @@ html, body {
 }
 
 /* ── Motors ─────────────────────────────────────────────────── */
-/* #motor-row takes the three-column tile grid shared with #hero-row. */
+/* #motor-row shares the flex tile row with #hero-row (see there). */
 .motor-cell {
+  flex: 1; min-width: 0;
   background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 10px 8px; min-width: 0;
+  border-radius: var(--radius); padding: 10px 8px;
   display: flex; flex-direction: column; align-items: center; gap: 2px;
 }
 .mc-title { font-size: var(--fs-sm); font-weight: var(--fw-bold); color: var(--label); letter-spacing: .06em; }
 .mc-main {
-  font-size: clamp(22px, 7vw, 30px); font-weight: var(--fw-heavy); line-height: 1.05;
+  font-size: clamp(20px, 6.5vw, 32px); font-weight: var(--fw-heavy); line-height: 1.05;
   color: var(--value); font-variant-numeric: tabular-nums;
+  max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 /* Own line under the value, centred like the title and the value above it. */
 .mc-unit { font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--label); }

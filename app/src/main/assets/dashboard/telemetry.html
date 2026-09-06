@@ -74,7 +74,10 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
       </div>
     </div>
 
-    <!-- Motor + trip (single motor: ESC/motor temp, power; then voltage, trip, total). ZYD only. -->
+    <!-- Motor + trip (ESC/motor temp; then voltage, trip, total). ZYD only. Power (W) is a client-side
+         derived value (volt * current) the manufacturer app never displays anywhere - not on the
+         dashboard, not in the battery/energy value-cycle buttons - so it lives only in the data-grid
+         list below, not as a headline tile (same reasoning as the sf-lb-edition fix for "current"). -->
     <div class="section-hdr sub-hdr zyd-only">
       <span data-i18n="dash.motors.section">Motor</span>
     </div>
@@ -89,11 +92,6 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
           <div class="mc-title" data-i18n="dash.motor.motor.title">MOTOR</div>
           <div class="mc-main"><span id="mot-temp">-</span></div>
           <div class="mc-unit" data-i18n="dash.motor.temp.unit">°C</div>
-        </div>
-        <div class="motor-cell">
-          <div class="mc-title" data-i18n="dash.motor.power.title">POWER</div>
-          <div class="mc-main"><span id="m-power">-</span></div>
-          <div class="mc-unit" data-i18n="dash.motor.power.unit">W</div>
         </div>
       </div>
       <div id="motor-row-2">
@@ -1240,7 +1238,7 @@ function updateBLEUI(data) {
   document.querySelector('.ble-drum .sd-unit').textContent = speedUnit();
   document.querySelector('.gps-drum .sd-unit').textContent = speedUnitGPS();
 
-  const DASH = ['ble-speed','soc-val','gear-val','current-val','esc-temp','mot-temp','m-power',
+  const DASH = ['ble-speed','soc-val','gear-val','current-val','esc-temp','mot-temp',
     'm-volt','m-trip','m-total',
     'dg-volt','dg-current','dg-power','dg-batttemp','dg-total','dg-single','dg-rssi','dg-cap',
     'dg-lock','dg-cruise','dg-faults','dg-ver','dg-legacy-volt'];
@@ -1305,12 +1303,11 @@ function updateBLEUI(data) {
     curEl.style.color = cur > 0 ? 'var(--danger)' : cur < 0 ? 'var(--good)' : 'var(--text)';
   }
 
-  // Motor (single motor: ESC + motor temperature, power)
+  // Motor (single motor: ESC + motor temperature)
   setTxt('esc-temp', data.escTemp.toFixed(0));
   setTxt('mot-temp', data.motTemp.toFixed(0));
   const escEl = document.getElementById('esc-temp'); if (escEl) escEl.style.color = tempColor(data.escTemp);
   const motEl = document.getElementById('mot-temp'); if (motEl) motEl.style.color = tempColor(data.motTemp);
-  setTxt('m-power', data.power.toFixed(2));
   setTxt('m-volt', data.volt != null ? data.volt.toFixed(1) : '-');
   setTxt('m-trip', convDist(data.trip).toFixed(1));
   setTxt('m-total', convDist(data.total).toFixed(1));
@@ -1440,34 +1437,74 @@ function startRide() {
 
 function finalizeRide() {
   if (!state.currentRide) return;
-  state.currentRide.endTime = Date.now();
-  state.routes = loadRoutes().filter(r => r.id !== state.currentRide.id);
-  // Only save if ride has meaningful data
-  if (state.currentRide.points.length >= 2 || state.currentRide.dist > 0.01) {
-    state.routes.push({ ...state.currentRide });
-  }
-  saveRoutes(state.routes);
+  // The native RouteRecorderService owns the recorded track (it keeps logging GPS with the screen
+  // off, which a WebView geolocation watch cannot). This JS ride object is only the live overlay; it
+  // is NOT persisted. The finished native track is pulled in by importNativeRoutes() shortly after.
   state.currentRide = null;
   clearInterval(state.rideTimer);
   clearInterval(state.saveTimer);
-  // GPS keeps running while connected (live speed on the main screen); it stops only on disconnect.
-  renderRoutes();
   updateRideUI();
+  setTimeout(importNativeRoutes, 1500);
 }
 
-// Stop button for a live ride: finalize now and block auto-re-arm until the next reconnect.
+// Stop button for a live ride: stop native recording too and block auto-re-arm until the next reconnect.
 function stopLiveRide() {
   state.rideStopped = true;
+  try { if (typeof LB !== 'undefined' && LB.stopRouteRecording) LB.stopRouteRecording(); } catch (e) {}
   finalizeRide();
 }
 
-function periodicSaveRide() {
-  if (!state.currentRide) return;
-  // Save current ride as last element with endTime=0 (crash recovery)
-  state.routes = loadRoutes().filter(r => r.id !== state.currentRide.id);
-  state.routes.push({ ...state.currentRide, endTime: 0 });
-  saveRoutes(state.routes);
-  renderRoutes();
+// Durability is now the native recorder's job (flushes every fix to disk), so the old JS crash-save
+// is a no-op - keeping it avoids double-persisting the same ride.
+function periodicSaveRide() {}
+
+// Pull every finished native GPS route into the saved-routes list. The native side hands them over
+// once (deleting its files), so this is safe to call repeatedly (app start, opening the routes list,
+// after a ride). This is what makes a full track appear even when it was recorded with the screen off.
+function buildRouteFromNative(nr) {
+  const src = (nr && Array.isArray(nr.points)) ? nr.points : [];
+  const route = { id: 'ride_' + nr.id, startTime: nr.start || nr.id, endTime: nr.end || nr.id,
+                  dist: 0, hmPlus: 0, hmMinus: 0, points: [] };
+  for (const p of src) {
+    const lat = +p.lat, lon = +p.lon;
+    if (!isFinite(lat) || !isFinite(lon)) continue;
+    const alt = (p.alt != null && isFinite(+p.alt)) ? +p.alt : 0;
+    const pt = { lat, lon, alt, ts: +p.ts || 0, speed: Math.round((+p.speed || 0) * 10) / 10 };
+    if (route.points.length > 0) {
+      const prev = route.points[route.points.length - 1];
+      route.dist = Math.round((route.dist + haversine(prev.lat, prev.lon, lat, lon)) * 100) / 100;
+      const dAlt = alt - prev.alt;
+      if (dAlt > 0.5) route.hmPlus = Math.round(route.hmPlus + dAlt);
+      else if (dAlt < -0.5) route.hmMinus = Math.round(route.hmMinus + Math.abs(dAlt));
+    }
+    route.points.push(pt);
+  }
+  return route;
+}
+
+function importNativeRoutes() {
+  try {
+    if (typeof LB === 'undefined' || !LB.takeRecordedRoutes) return;
+    let arr;
+    try { arr = JSON.parse(LB.takeRecordedRoutes() || '[]'); } catch (e) { return; }
+    if (!Array.isArray(arr) || !arr.length) return;
+    const routes = loadRoutes();
+    let added = 0;
+    for (const nr of arr) {
+      const r = buildRouteFromNative(nr);
+      if (r.points.length >= 2 || r.dist > 0.01) { routes.push(r); added++; }
+    }
+    if (added) { saveRoutes(routes); state.routes = routes; renderRoutes(); }
+  } catch (e) {}
+}
+
+// Keep the native recorder's config in step with the dashboard (it cannot read localStorage).
+function syncGpsConfigToNative() {
+  try {
+    if (typeof LB !== 'undefined' && LB.setGpsRecordConfig) {
+      LB.setGpsRecordConfig(!!state.gpsAutoStart, Math.max(1, Math.round(state.gpsIntervalMs / 1000)));
+    }
+  } catch (e) {}
 }
 
 /* ── GPS Tracking ─────────────────────────────────────────── */
@@ -3172,6 +3209,11 @@ const FOLD_MAX_SCALE = 1.7;    // measured fixed point that exactly fills the fo
                                 // on some runs (small variance in the status-bar/layout timing) -
                                 // kept a safety margin below it instead of the exact fixed point
 const FOLD_BOTTOM_GAP = 5;     // breathing room between the last button row and the screen edge
+const FOLD_BASE_GAP = 10;      // the CSS --gap: the minimum row gap
+const FOLD_MAX_GAP = 34;       // the row gap never grows past this: once the scale hits its cap the
+                                // leftover height is shared out as row spacing instead of being left
+                                // as one dead strip below the last row - capped so a very tall screen
+                                // still gets a defined gap, not a void
 
 let _foldScale = 0;            // last applied factor, 0 = never fitted
 
@@ -3195,26 +3237,31 @@ function fitFold() {
   // the answer - which got common once a smaller fold pushed the ceiling up to 2.0. More passes
   // cost nothing (this only reflows a detached-from-scroll transform, not the visible page).
   let scale = _foldScale || 1;
+  let natural = 0;
   for (let pass = 0; pass < 6; pass++) {
     inner.style.width = (100 / scale) + '%';
-    const natural = inner.offsetHeight;
+    inner.style.rowGap = FOLD_BASE_GAP + 'px';
+    natural = inner.offsetHeight;
     if (!(natural > 0)) return;
     scale = Math.max(FOLD_MIN_SCALE, Math.min(FOLD_MAX_SCALE, avail / natural));
   }
 
-  // Already there: rewriting the same values would resize the observed children again, and a
-  // factor that lands either side of a text-wrap boundary could then oscillate forever.
-  if (Math.abs(scale - _foldScale) < 0.005) {
-    inner.style.width = (100 / _foldScale) + '%';
-    return;
-  }
   _foldScale = scale;
   inner.style.width = (100 / scale) + '%';
   inner.style.transform = 'scale(' + scale + ')';
-  // Never shorter than the screen: when the factor runs into the upper cap the scaled block
-  // stops short of the bottom edge, and the next section's heading would peek in. Claiming the
-  // full height keeps everything after the fold below the edge either way.
-  fold.style.height = Math.round(Math.max(avail, inner.offsetHeight * scale)) + 'px';
+  // When the scale hits FOLD_MAX_SCALE the scaled block stops short of the bottom edge. Rather
+  // than leaving that leftover as one dead strip below the last row, top up the row gap to fill
+  // it - capped at FOLD_MAX_GAP so a very tall screen still gets a defined gap, not a void. Count
+  // only the visible rows (a row hidden per family, e.g. LEGACY's hero-row, is not a flex item).
+  let visible = 0;
+  for (let i = 0; i < inner.children.length; i++) {
+    if (inner.children[i].offsetParent !== null) visible++;
+  }
+  const boundaries = Math.max(1, visible - 1);
+  const leftover = Math.max(0, (avail / scale) - natural);          // unscaled px still to fill
+  const gap = Math.min(FOLD_MAX_GAP, FOLD_BASE_GAP + leftover / boundaries);
+  inner.style.rowGap = gap + 'px';
+  fold.style.height = Math.round(avail) + 'px';
 }
 
 /* Re-fit whenever the viewport or the fold's own content changes (a gear tag appearing, a
@@ -3256,6 +3303,7 @@ function wireEvents() {
   // Routes sub-page open/close
   document.getElementById('btn-open-routes').addEventListener('click', () => {
     closeSettings();
+    importNativeRoutes();   // pull in any track recorded natively (incl. with the screen off)
     renderRoutes();
     document.getElementById('routes-page').classList.add('open');
   });
@@ -3440,6 +3488,7 @@ function wireEvents() {
       if (state.currentRide) finalizeRide();
       state.armDistM = 0;
     }
+    syncGpsConfigToNative();
   });
 
   // GPS recording interval: persist and apply live to the ongoing/next recording.
@@ -3448,6 +3497,7 @@ function wireEvents() {
     const sec = parseInt(e.target.value, 10) || 5;
     state.gpsIntervalMs = sec * 1000;
     storage.set('lb_gps_interval', String(sec));
+    syncGpsConfigToNative();
   });
 
   // Fullscreen toggle: hide/show the Android status bar via the native bridge (persisted natively).
@@ -3531,6 +3581,11 @@ function init() {
   loadModelOverride();
   populateModelSelect();
   recoverStuckRides();
+  importNativeRoutes();   // pull in any track the native recorder finished while the app was away
+  // ...and again whenever the app returns to the foreground (a ride may have finished while away).
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) { try { importNativeRoutes(); } catch (e) {} }
+  });
   renderRoutes();
   initNavBanner();
   initRideBanner();
