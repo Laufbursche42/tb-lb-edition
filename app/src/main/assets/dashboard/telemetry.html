@@ -1293,6 +1293,14 @@ function updateBLEUI(data) {
   setTxt('soc-val', Math.round(data.batt));
   setTxt('gear-val', data.gear === 1 ? 'T' : 'D');
 
+  // Derive the real lock state from the reported limits instead of trusting a local flag: clearly
+  // above the lock speed means the scooter is actually riding unlocked right now.
+  if (data.settingsReady && data.m1 != null && data.m2 != null && data.m3 != null) {
+    _speedUnlocked = Math.max(data.m1, data.m2, data.m3) > (SPEED_LOCK_DEFAULT + 2);
+    const drum = document.getElementById('ble-drum');
+    if (drum) drum.classList.toggle('unlocked', _speedUnlocked);
+  }
+
   // Signed from the rider's point of view: current drawn from the pack reads negative and red,
   // recuperation reads positive and green.
   const cur = data.current;
@@ -1364,7 +1372,9 @@ function onBLEConnectionChange(nowConnected) {
     state.armDistM = 0;
     state.armLastTs = null;
     state.rideStopped = false;
-    _speedUnlocked = false;
+    // _speedUnlocked is no longer forced here - the first settingsReady frame derives the real
+    // state from the reported m1/m2/m3 limits (see updateBLEUI), so a reconnect to an already
+    // unlocked scooter shows the unlocked drum instead of a stale locked one.
     _bleDrumTaps = 0;
     const drum = document.getElementById('ble-drum'); if (drum) drum.classList.remove('unlocked');
   } else {
