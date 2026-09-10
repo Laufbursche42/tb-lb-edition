@@ -65,8 +65,9 @@ public final class RideLogger {
 
 
     // Headline CSV columns emitted first (when present), before the rest in alphabetical order.
-    // Each name must match a FrameParser.toJson() key. A name that matches nothing is silently
-    // ignored here and the real column drops back into the alphabetical block.
+    // Each name must match a key in the log line (FrameParser.toJson() plus the canonical
+    // aliases canonicalize() adds). A name that matches nothing is silently ignored here and
+    // the real column drops back into the alphabetical block.
     private static final String[] CSV_HEADLINE = {"speed", "SOC", "power", "gear"};
 
     private final Context appCtx;
@@ -194,12 +195,44 @@ public final class RideLogger {
         Writer w = writer;
         if (w == null) return;
         try {
-            w.write(json);   // one compact JSON object per line (NDJSON)
+            w.write(canonicalize(json));   // one compact JSON object per line (NDJSON)
             w.write('\n');
             w.flush();       // flush immediately so an app kill loses at most this minute
         } catch (Throwable t) {
             Log.e(TAG, "writeSample failed", t);
         }
+    }
+
+    /**
+     * Add the canonical field names the LEAT desktop tool is hard-wired to (realSpeed, SOC,
+     * VolPack, singleMile, totalMile, rMotorTemp - the motor sits in the rear wheel) alongside
+     * the app's own keys, and replace power (Watt in the live JSON) with kilowatt, the unit LEAT
+     * expects under that key. Only the log line changes; the live JSON stays in Watt. Each alias
+     * is added only when its source key is present, so the narrow LEGACY family is covered too.
+     * On a parse failure the line is written unchanged.
+     */
+    private static String canonicalize(String json) {
+        try {
+            JSONObject o = new JSONObject(json);
+            aliasNumber(o, "speed", "realSpeed");
+            aliasNumber(o, "batt", "SOC");
+            aliasNumber(o, "volt", "VolPack");
+            aliasNumber(o, "trip", "singleMile");
+            aliasNumber(o, "total", "totalMile");
+            aliasNumber(o, "motTemp", "rMotorTemp");
+            double watt = o.optDouble("power", Double.NaN);
+            if (!Double.isNaN(watt)) {
+                o.put("power", Math.round(watt) / 1000.0);
+            }
+            return o.toString();
+        } catch (Throwable t) {
+            return json;
+        }
+    }
+
+    private static void aliasNumber(JSONObject o, String from, String to) throws JSONException {
+        double v = o.optDouble(from, Double.NaN);
+        if (!Double.isNaN(v)) o.put(to, v);
     }
 
     private void finalizeRide() {
@@ -284,7 +317,7 @@ public final class RideLogger {
             File out = PathGuard.childOf(outDir, "ride-" + safe + (csv ? ".csv" : ".json"));
             List<JSONObject> samples = readSamples(src);
             if (csv) writeCsv(samples, out);
-            else writeJson(samples, parseLongSafe(safe), out);
+            else writeJson(samples, out);
             return (out.isFile() && out.length() > 0) ? out : null;
         } catch (Throwable t) {
             Log.e(TAG, "exportRide failed", t);
@@ -313,18 +346,16 @@ public final class RideLogger {
 
     // ── JSON export ──
 
-    private void writeJson(List<JSONObject> samples, long id, File out) {
+    // A bare top-level array of samples: the shape the LEAT desktop tool parses. A wrapper
+    // object around it would make the export unreadable for LEAT, so there is no meta block;
+    // the ride list derives its metadata from the NDJSON directly.
+    private void writeJson(List<JSONObject> samples, File out) {
         Writer w = null;
         try {
-            JSONObject meta = metaFrom(samples, id);
-            meta.put("fin", finOf(samples));
             JSONArray arr = new JSONArray();
             for (JSONObject o : samples) arr.put(o);
-            JSONObject root = new JSONObject();
-            root.put("meta", meta);
-            root.put("samples", arr);
             w = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(out, false), "UTF-8"));
-            w.write(root.toString());
+            w.write(arr.toString());
             w.flush();
         } catch (Throwable t) {
             Log.e(TAG, "writeJson failed", t);
@@ -356,10 +387,10 @@ public final class RideLogger {
         for (String n : names) if (!scalarKeys.contains(n)) nameCols.add(n);
         Set<String> nameColSet = new HashSet<>(nameCols);
 
-        // Column order: ts, tsISO, headline scalars (when present), then the rest alphabetically.
+        // Column order: ts, headline scalars (when present), then the rest alphabetically.
+        // No tsISO column: LEAT would read it as a bogus constant time series.
         List<String> cols = new ArrayList<>();
         cols.add("ts");
-        cols.add("tsISO");
         Set<String> placed = new HashSet<>();
         placed.add("ts");
         for (String h : CSV_HEADLINE) {
@@ -389,11 +420,9 @@ public final class RideLogger {
         }
 
         // try-with-resources guarantees the writer (and its underlying stream) is always closed.
-        // The UTF-8 BOM is written as the U+FEFF character (it encodes to EF BB BF) so spreadsheets
-        // render the degree sign and other units correctly.
+        // No UTF-8 BOM: it would keep the LEAT desktop tool from recognising the ts column.
         try (Writer w = new BufferedWriter(
                 new OutputStreamWriter(new FileOutputStream(out, false), "UTF-8"))) {
-            w.write('\uFEFF');
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < cols.size(); i++) {
                 if (i > 0) sb.append(',');
@@ -415,7 +444,6 @@ public final class RideLogger {
                     String col = cols.get(i);
                     String cell;
                     if ("ts".equals(col)) cell = ts > 0 ? Long.toString(ts) : "";
-                    else if ("tsISO".equals(col)) cell = ts > 0 ? isoOf(ts) : "";
                     else if (nameColSet.contains(col)) cell = nvals.containsKey(col) ? nvals.get(col) : "";
                     else if (cellIdx.containsKey(col)) {
                         JSONArray cm = o.optJSONArray("cellMv");
@@ -446,7 +474,9 @@ public final class RideLogger {
                 if (start == 0) start = ts;
                 end = ts;
             }
-            double mile = o.optDouble("totalMile", Double.NaN);
+            // "total" is the odometer key FrameParser emits; every sample carries it, including
+            // rides recorded before the canonical "totalMile" alias existed in the log.
+            double mile = o.optDouble("total", Double.NaN);
             if (!Double.isNaN(mile)) {
                 if (Double.isNaN(firstMile)) firstMile = mile;
                 lastMile = mile;
@@ -470,15 +500,6 @@ public final class RideLogger {
         } catch (JSONException ignored) {
         }
         return meta;
-    }
-
-    private static String finOf(List<JSONObject> samples) {
-        String fin = "";
-        for (JSONObject o : samples) {
-            String bn = o.optString("btName", "");
-            if (bn != null && !bn.isEmpty()) fin = bn;
-        }
-        return fin;
     }
 
     // ── File / parsing helpers ──
@@ -590,14 +611,6 @@ public final class RideLogger {
         return "\"" + s.replace("\"", "\"\"") + "\"";
     }
 
-    private static String isoOf(long ms) {
-        try {
-            return java.time.Instant.ofEpochMilli(ms).toString();
-        } catch (Throwable t) {
-            return "";
-        }
-    }
-
     /** Road speed of a snapshot; "speed" is the only key FrameParser emits for it. */
     private static double speedOf(String json) {
         try {
@@ -617,14 +630,6 @@ public final class RideLogger {
             if (c < '0' || c > '9') return null;
         }
         return s;
-    }
-
-    private static long parseLongSafe(String s) {
-        try {
-            return Long.parseLong(s.trim());
-        } catch (Throwable t) {
-            return 0L;
-        }
     }
 
     private static double round2(double v) {

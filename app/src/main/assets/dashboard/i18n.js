@@ -20,6 +20,7 @@
 window.I18N = {
   en: {
     'whatsnew.points': [
+      "<b>Exports the LEAT desktop tool reads directly.</b> Ride logs now also carry the canonical field names (realSpeed, SOC, VolPack, singleMile, totalMile, rMotorTemp) and record power in kW, the JSON export is a plain sample array, the CSV comes without BOM and without a tsISO column and the GPX speed is written in m/s. The ride list also shows the real distance again instead of 0 km.",
       "<b>Trittbrett support.</b> This edition talks to Trittbrett scooters: FRITZ, PAUL, SULTAN, HILDE, KALLE, EMMA and the older models advertised simply as \"Scooter\".",
       "<b>Two wire families, one app.</b> A ZYD scooter gets the full telemetry and settings surface; an older LEGACY scooter only reports speed (and sometimes voltage) and only accepts a gear switch and lock/unlock. The dashboard adapts automatically.",
       "<b>Speed unlock by triple-tap.</b> Triple-tap the km/h tile on the main screen to unlock or lock the speed limit; the unlock value is set in Scooter settings. Only works on scooters that accept a BLE speed command.",
@@ -445,6 +446,7 @@ window.I18N = {
 
   de: {
     'whatsnew.points': [
+      "<b>Exporte, die das Desktop-Tool LEAT direkt einliest.</b> Ride-Logs tragen jetzt zusätzlich die kanonischen Feldnamen (realSpeed, SOC, VolPack, singleMile, totalMile, rMotorTemp) und speichern die Leistung in kW, der JSON-Export ist ein reines Sample-Array, die CSV kommt ohne BOM und ohne tsISO-Spalte und die GPX-Geschwindigkeit steht in m/s. Die Fahrtenliste zeigt außerdem wieder die echte Distanz statt 0 km.",
       "<b>Unterstützung für Trittbrett.</b> Diese Edition spricht mit Trittbrett-Scootern: FRITZ, PAUL, SULTAN, HILDE, KALLE, EMMA sowie den älteren Modellen, die sich einfach als \"Scooter\" melden.",
       "<b>Zwei Funkprotokolle, eine App.</b> Ein ZYD-Scooter liefert die volle Telemetrie und Einstellungsoberfläche; ein älterer LEGACY-Scooter meldet nur Geschwindigkeit (und manchmal Spannung) und nimmt nur Gangwechsel und Sperren/Entsperren an. Das Dashboard passt sich automatisch an.",
       "<b>Geschwindigkeit entsperren per Dreifach-Tipp.</b> Dreifach auf die km/h-Kachel auf dem Hauptbildschirm tippen, um die Geschwindigkeitsgrenze zu entsperren oder zu sperren; der Entsperrwert wird in den Scooter-Einstellungen festgelegt. Funktioniert nur bei Scootern, die einen BLE-Geschwindigkeitsbefehl annehmen.",

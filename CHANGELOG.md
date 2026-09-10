@@ -16,6 +16,16 @@ To hand-write the notes for a release, add a section headed with its version num
 
 If no matching section exists the notes fall back to the commit messages, so keeping this file up to date is optional.
 
+## 1.0.18
+
+LEAT-compatible ride exports. The desktop tool [LEAT](https://github.com/Laufbursche42/leat) now reads every export of this app directly:
+
+- Ride log lines additionally carry the canonical field names LEAT is hard-wired to (`realSpeed`, `SOC`, `VolPack`, `singleMile`, `totalMile`, `rMotorTemp`) and record `power` in kW instead of W. The live dashboard keeps its own keys and units.
+- The JSON export is a bare top-level array of samples instead of a `{meta, samples}` wrapper object.
+- The CSV export no longer starts with a UTF-8 BOM and no longer contains a `tsISO` column, so LEAT recognises the `ts` time axis.
+- The GPX export writes `<speed>` in m/s as the GPX convention expects, instead of km/h.
+- Fixed the ride list and export metadata always reporting a distance of 0 km: the odometer was read under a key the app never wrote.
+
 ## 1.0.0
 
 The first Trittbrett build.
