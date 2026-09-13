@@ -111,7 +111,7 @@ final class FrameParser {
     }
 
     /** off = u16BE(b,2); copy b[5..] into the 80-byte accumulator at offset off. Complete at off+8>=64. */
-    private void decodeEscInfo(byte[] b) {
+    private synchronized void decodeEscInfo(byte[] b) {
         int off = u16(b, 2);
         for (int i = 0; i < 8 && (5 + i) < b.length && (off + i) < escInfoBuf.length; i++) {
             escInfoBuf[off + i] = b[5 + i];
@@ -126,7 +126,7 @@ final class FrameParser {
 
     // ── Legacy: head 0xFF, op = t[2], additive checksum over all but the last byte ──
 
-    private void dispatchLegacy(byte[] v) {
+    private synchronized void dispatchLegacy(byte[] v) {
         int n = v.length;
         if (n < 5 || (v[0] & 0xFF) != 0xFF) return;
         int sum = 0;
