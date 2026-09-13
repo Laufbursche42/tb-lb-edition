@@ -203,7 +203,7 @@ final class BleManager {
                 changed = prev == null;
                 found.put(addr, e);
             }
-            if (changed) { Log.i(TAG, "found: " + e.name + " [" + addr + "] rssi=" + e.rssi); pushScanResults(); }
+            if (changed) { Log.i(TAG, "found: " + logSafe(e.name) + " [" + addr + "] rssi=" + e.rssi); pushScanResults(); }
         } catch (Throwable t) {
             Log.e(TAG, "handleScan failed", t);
         }
@@ -268,7 +268,7 @@ final class BleManager {
             String f = classifyByName(deviceName);
             if (f != null) family = f;
             parser.btName = deviceName == null ? "" : deviceName;
-            Log.i(TAG, "connect() -> " + desiredAddress + " name=" + deviceName + " family(guess)=" + family);
+            Log.i(TAG, "connect() -> " + desiredAddress + " name=" + logSafe(deviceName) + " family(guess)=" + family);
             pushState("connecting");
             gatt = dev.connectGatt(appCtx, false, gattCallback, BluetoothDevice.TRANSPORT_LE);
         } catch (Throwable t) {
@@ -804,5 +804,10 @@ final class BleManager {
     void shutdown() {
         stopScan();
         disconnect();
+    }
+
+    /** Strip newlines from a BLE-advertised name before it goes into a log line. */
+    private static String logSafe(String s) {
+        return String.valueOf(s).replace('\n', ' ').replace('\r', ' ');
     }
 }

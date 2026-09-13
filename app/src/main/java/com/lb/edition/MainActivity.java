@@ -142,13 +142,9 @@ public class MainActivity extends Activity {
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
         s.setDatabaseEnabled(true);
-        s.setAllowFileAccess(true);
-        s.setAllowContentAccess(true);
-        // The dashboard is a self-contained bundled asset page; it never needs to read other local
-        // files or make cross-origin requests FROM the file:// origin. Keeping these OFF means that
-        // even if a scripting bug ever landed on the page, it could not fetch("file:///...") to exfil
-        // local data or reach the network cross-origin. (Both default to false on modern WebView; set
-        // explicitly so the hardening is not silently lost on an older engine.)
+        // No file/content:// access needed; android_asset loads are unaffected by this being off.
+        s.setAllowFileAccess(false);
+        s.setAllowContentAccess(false);
         s.setAllowFileAccessFromFileURLs(false);
         s.setAllowUniversalAccessFromFileURLs(false);
         s.setMediaPlaybackRequiresUserGesture(false);
@@ -188,7 +184,7 @@ public class MainActivity extends Activity {
 
             @Override
             public boolean onConsoleMessage(android.webkit.ConsoleMessage cm) {
-                Log.i(TAG, "JS console: " + cm.message() + " (" + cm.sourceId() + ":" + cm.lineNumber() + ")");
+                Log.i(TAG, "JS console: " + logSafe(cm.message()) + " (" + logSafe(cm.sourceId()) + ":" + cm.lineNumber() + ")");
                 return true;
             }
         });
@@ -207,6 +203,18 @@ public class MainActivity extends Activity {
         });
     }
 
+    /** Quote a string as a safe JS string literal for splicing into evaluateJavascript() calls. */
+    private static String jsQuote(String s) {
+        return JSONObject.quote(s == null ? "" : s);
+    }
+
+    /** Strip newlines from a value before it goes into a log line, so a JS-bridge string (or a
+     *  console/BLE message) can't forge extra log entries. */
+    private static String logSafe(Object o) {
+        String s = String.valueOf(o);
+        return s.replace('\n', ' ').replace('\r', ' ');
+    }
+
     /** Push each navigation guidance snapshot to the WebView (window.__onNav) for the dashboard banner. */
     private final NavSession.Listener navListener = new NavSession.Listener() {
         @Override
@@ -220,7 +228,7 @@ public class MainActivity extends Activity {
                 o.put("turnArrow", s.turnArrow);
                 o.put("distToTurnM", s.distToTurnM);
                 o.put("remainingM", s.remainingM);
-                runJs("(function(){try{if(window.__onNav)window.__onNav(" + o + ");}catch(e){}})();");
+                runJs("(function(){try{if(window.__onNav)window.__onNav(JSON.parse(" + jsQuote(o.toString()) + "));}catch(e){}})();");
             } catch (Throwable ignored) {
             }
         }
@@ -230,13 +238,14 @@ public class MainActivity extends Activity {
         @Override
         public void onScanResults(String jsonArray) {
             if (jsonArray == null) return;
-            runJs("(function(){try{if(window.__onBleScan)window.__onBleScan(" + jsonArray + ");}catch(e){}})();");
+            // BLE device names are attacker-controlled, so never splice them into JS source as-is.
+            runJs("(function(){try{if(window.__onBleScan)window.__onBleScan(" + jsQuote(jsonArray) + ");}catch(e){}})();");
         }
 
         @Override
         public void onState(String json) {
             if (json == null) return;
-            runJs("(function(){try{if(window.__onBleState)window.__onBleState(" + json + ");}catch(e){}})();");
+            runJs("(function(){try{if(window.__onBleState)window.__onBleState(" + jsQuote(json) + ");}catch(e){}})();");
             // Drive the ride logger on connect/disconnect transitions (fires once per change).
             try {
                 boolean nowConnected = new JSONObject(json).optBoolean("connected", false);
@@ -261,7 +270,7 @@ public class MainActivity extends Activity {
             if (json == null) return;
             // Write the JSON string to localStorage['lb_live_data'] (dashboard's tickBLE reads it)
             // and also call window.__onBleData(json) if present.
-            runJs("(function(){try{var d=" + json + ";var s=JSON.stringify(d);"
+            runJs("(function(){try{var s=" + jsQuote(json) + ";"
                     + "try{localStorage.setItem('lb_live_data',s);}catch(e){}"
                     + "if(window.__onBleData){try{window.__onBleData(s);}catch(e){}}}catch(e){}})();");
             // Feed the latest snapshot to the ride logger (arms/samples the ride).
@@ -315,6 +324,21 @@ public class MainActivity extends Activity {
     /** Enqueue the APK download into the public Downloads folder via DownloadManager (visible file +
      *  progress notification) then opens the installer once it completes. Runs on the UI thread. */
     private static final String APK_UPDATE_NAME = "laufbursche-edition-update.apk";
+
+    /** Only ever download+install an update from GitHub's own release/asset hosts, over HTTPS. */
+    private static boolean isTrustedApkUrl(String url) {
+        try {
+            Uri u = Uri.parse(url);
+            if (!"https".equalsIgnoreCase(u.getScheme())) return false;
+            String host = u.getHost();
+            if (host == null) return false;
+            host = host.toLowerCase(Locale.ROOT);
+            return host.equals("github.com") || host.endsWith(".github.com")
+                    || host.equals("objects.githubusercontent.com") || host.endsWith(".githubusercontent.com");
+        } catch (Throwable t) {
+            return false;
+        }
+    }
 
     private void startApkDownload(String url) {
         try {
@@ -516,7 +540,7 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void connect(String addr) {
             try {
-                Log.i(TAG, "LB.connect(" + addr + ")");
+                Log.i(TAG, "LB.connect(" + logSafe(addr) + ")");
                 if (ble != null) ble.connect(addr);
             } catch (Throwable t) {
                 Log.e(TAG, "connect bridge failed", t);
@@ -527,7 +551,7 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void connect(String addr, String name) {
             try {
-                Log.i(TAG, "LB.connect(" + addr + ", " + name + ")");
+                Log.i(TAG, "LB.connect(" + logSafe(addr) + ", " + logSafe(name) + ")");
                 if (ble != null) ble.connect(addr, name);
             } catch (Throwable t) {
                 Log.e(TAG, "connect bridge failed", t);
@@ -557,7 +581,7 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void sendSetting(String json) {
             try {
-                Log.i(TAG, "LB.sendSetting(" + json + ")");
+                Log.i(TAG, "LB.sendSetting(" + logSafe(json) + ")");
                 if (ble != null) ble.sendSetting(json);
             } catch (Throwable t) {
                 Log.e(TAG, "sendSetting bridge failed", t);
@@ -628,7 +652,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void startStream(String url) {
-            Log.i(TAG, "LB.startStream(" + url + ")");
+            Log.i(TAG, "LB.startStream(" + logSafe(url) + ")");
             try {
                 if (url == null || url.trim().isEmpty()) {
                     Log.w(TAG, "startStream: empty url, ignoring");
@@ -688,7 +712,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void log(String s) {
-            Log.i(TAG, "LB.log: " + s);
+            Log.i(TAG, "LB.log: " + logSafe(s));
             try {
                 if (debugLog != null && debugLog.isEnabled()) debugLog.append(s);
             } catch (Throwable ignored) {
@@ -746,7 +770,7 @@ public class MainActivity extends Activity {
                     Log.e(TAG, "checkUpdates failed", t);
                 }
                 final String r = result;
-                runJs("(function(){try{if(window.__onAppUpdate)window.__onAppUpdate(" + r + ");}catch(e){}})();");
+                runJs("(function(){try{if(window.__onAppUpdate)window.__onAppUpdate(" + jsQuote(r) + ");}catch(e){}})();");
             }).start();
         }
 
@@ -755,6 +779,11 @@ public class MainActivity extends Activity {
          *  guarantees the file is a real, visible file in Downloads and yields an installable content URI. */
         @JavascriptInterface
         public void downloadAndInstallApk(final String url) {
+            if (!isTrustedApkUrl(url)) {
+                Log.e(TAG, "downloadAndInstallApk: rejected untrusted url");
+                runOnUiThread(() -> toast("Update rejected: not a GitHub release URL"));
+                return;
+            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !getPackageManager().canRequestPackageInstalls()) {
                 runOnUiThread(() -> {
                     try {
@@ -923,7 +952,7 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void deleteRide(String id) {
             try {
-                Log.i(TAG, "LB.deleteRide(" + id + ")");
+                Log.i(TAG, "LB.deleteRide(" + logSafe(id) + ")");
                 if (rideLogger != null) rideLogger.deleteRide(id);
             } catch (Throwable t) {
                 Log.e(TAG, "deleteRide bridge failed", t);
@@ -945,7 +974,7 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void openUrl(final String url) {
             try {
-                Log.i(TAG, "LB.openUrl(" + url + ")");
+                Log.i(TAG, "LB.openUrl(" + logSafe(url) + ")");
                 if (url == null) return;
                 final String u = url.trim();
                 if (!u.startsWith("http://") && !u.startsWith("https://")) return;
@@ -966,7 +995,7 @@ public class MainActivity extends Activity {
         /** Export a ride ("csv"/"json") and share it via the system chooser. No-op if id is unknown. */
         @JavascriptInterface
         public void exportRide(final String id, final String format) {
-            Log.i(TAG, "LB.exportRide(" + id + ", " + format + ")");
+            Log.i(TAG, "LB.exportRide(" + logSafe(id) + ", " + logSafe(format) + ")");
             runOnUiThread(() -> {
                 try {
                     File f = rideLogger != null ? rideLogger.exportRide(id, format) : null;
@@ -1106,20 +1135,6 @@ public class MainActivity extends Activity {
             Log.e(TAG, "saveGpx name lookup failed", t);
         }
         return fallback;
-    }
-
-    /** Never overwrite an existing export: ride.gpx becomes ride (1).gpx. */
-    private static File gpxFreeFile(File dir, String name) {
-        File f = new File(dir, name);
-        if (!f.exists()) return f;
-        int dot = name.lastIndexOf('.');
-        String stem = dot > 0 ? name.substring(0, dot) : name;
-        String ext = dot > 0 ? name.substring(dot) : "";
-        for (int i = 1; i < 1000; i++) {
-            f = new File(dir, stem + " (" + i + ")" + ext);
-            if (!f.exists()) return f;
-        }
-        return f;
     }
 
     /** Keep the page's name from escaping the Downloads folder or losing its extension. */
