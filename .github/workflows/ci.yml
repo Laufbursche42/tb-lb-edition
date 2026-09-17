@@ -25,6 +25,7 @@ on:
       - '.gitignore'
       - '.github/**'
       - 'firmware/**'
+  workflow_dispatch:
 
 permissions:
   contents: read
