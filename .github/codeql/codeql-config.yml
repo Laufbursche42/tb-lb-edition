@@ -1,0 +1,16 @@
+name: "Laufbursche Edition CodeQL config"
+
+# Full security-extended analysis stays on. One of its queries flags a pattern that is inherent
+# to this app and cannot be "fixed" without breaking a feature, so it is excluded here with a
+# stated reason instead of being dismissed one alert at a time.
+
+queries:
+  - uses: security-extended
+
+query-filters:
+  # Missing certificate pinning: the external hosts (GitHub releases, brouter.de, the mapsforge
+  # mirror) rotate intermediates too often to pin safely without a live device to verify against.
+  # The APK-update path is instead restricted to a github.com/githubusercontent.com allowlist
+  # (MainActivity.isTrustedApkUrl) and cleartext is off app-wide (network_security_config.xml).
+  - exclude:
+      id: java/android/missing-certificate-pinning
