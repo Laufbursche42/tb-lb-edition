@@ -14,3 +14,12 @@ query-filters:
   # (MainActivity.isTrustedApkUrl) and cleartext is off app-wide (network_security_config.xml).
   - exclude:
       id: java/android/missing-certificate-pinning
+  # The app has exactly one WebView (the bundled offline dashboard) and exactly one
+  # addJavascriptInterface/setJavaScriptEnabled call, both inherent to that feature. The WebView's
+  # own WebViewClient.shouldOverrideUrlLoading cancels navigation to anything outside
+  # file:///android_asset/, so no remote or attacker-controlled page can ever load into it and
+  # reach the bridge. Not something a data-flow fix can change without dropping the dashboard.
+  - exclude:
+      id: java/android/webview-addjavascriptinterface
+  - exclude:
+      id: java/android/websettings-javascript-enabled
