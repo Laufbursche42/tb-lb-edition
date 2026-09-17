@@ -337,7 +337,7 @@ public final class RideLogger {
             File f = PathGuard.childOf(ridesDir(), "ride-" + safe + ".ndjson");
             if (!f.isFile()) return;
             if (!f.delete()) {
-                Log.w(TAG, "deleteRide: could not delete " + f.getName());
+                Log.w(TAG, "deleteRide: could not delete " + f.getName());  // name is "ride-" + safeId + ".ndjson", digits only
             }
         } catch (Throwable t) {
             Log.e(TAG, "deleteRide failed", t);

@@ -112,6 +112,8 @@ final class CommandBuilder {
 
     /** Global speed-limit register 0x20, value = round(kmh*10) as uint16 BE. App ceiling 60 km/h. */
     static byte[] zydSpeedFrame(double kmh) {
+        if (!Double.isFinite(kmh)) kmh = 0;
+        kmh = Math.max(0, Math.min(60, kmh));   // enforce the app ceiling this method already promises
         int v = ((int) Math.round(kmh * 10.0)) & 0xFFFF;
         return zydRwParamFrame(0x20, new byte[]{(byte) ((v >>> 8) & 0xFF), (byte) (v & 0xFF)});
     }

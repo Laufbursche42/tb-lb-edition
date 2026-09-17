@@ -268,7 +268,7 @@ final class BleManager {
             String f = classifyByName(deviceName);
             if (f != null) family = f;
             parser.btName = deviceName == null ? "" : deviceName;
-            Log.i(TAG, "connect() -> " + desiredAddress + " name=" + logSafe(deviceName) + " family(guess)=" + family);
+            Log.i(TAG, "connect() -> " + logSafe(desiredAddress) + " name=" + logSafe(deviceName) + " family(guess)=" + family);
             pushState("connecting");
             gatt = dev.connectGatt(appCtx, false, gattCallback, BluetoothDevice.TRANSPORT_LE);
         } catch (Throwable t) {
@@ -695,6 +695,7 @@ final class BleManager {
     // ── Register encoding (opv / int / realmax / index), all 16-bit BE at the register address ──
 
     private static byte[] enc16(double value, String kind, double factor) {
+        if (!Double.isFinite(value)) value = 0;   // reject NaN/Infinity before it hits the cast/mask below
         int n;
         if ("realmax".equals(kind)) n = ((int) Math.round(value)) * (int) factor;
         else if ("opv".equals(kind)) n = (int) Math.round(value * factor);
