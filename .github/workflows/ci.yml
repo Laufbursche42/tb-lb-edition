@@ -13,7 +13,6 @@ on:
       - 'LICENSE'
       - '.gitattributes'
       - '.gitignore'
-      - '.github/**'
       - 'firmware/**'
   pull_request:
     branches: [ main ]
@@ -23,7 +22,6 @@ on:
       - 'LICENSE'
       - '.gitattributes'
       - '.gitignore'
-      - '.github/**'
       - 'firmware/**'
   workflow_dispatch:
 

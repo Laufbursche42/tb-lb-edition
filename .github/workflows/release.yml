@@ -31,7 +31,6 @@ on:
       - 'license.md'
       - '.gitattributes'
       - '.gitignore'
-      - '.github/**'
       - 'prompt.md'
       - '_portspec/**'
   workflow_dispatch:
