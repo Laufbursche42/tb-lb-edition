@@ -1100,7 +1100,7 @@ function parseBLE(raw) {
       out.trip      = num(d.trip);
       out.total     = num(d.total);
       out.battTemp  = num(d.battTemp);
-      out.capUsed   = has('capUsed') ? num(d.capUsed) : null;
+      out.capRemaining = has('capRemaining') ? num(d.capRemaining) : null;
       out.capTotal  = has('capTotal') ? num(d.capTotal) : null;
       out.faults    = Array.isArray(d.faults) ? d.faults : [];
       out.displayVer  = d.displayVer || '';
@@ -1324,7 +1324,7 @@ function updateBLEUI(data) {
   setTxt('dg-rssi', `${data.rssi} dBm`);
   const rssiEl = document.getElementById('dg-rssi');
   if (rssiEl) rssiEl.style.color = data.rssi < -85 ? 'var(--danger)' : data.rssi < -70 ? 'var(--warn)' : 'var(--good)';
-  setTxt('dg-cap', (data.capUsed != null && data.capTotal != null) ? `${data.capUsed}/${data.capTotal}` : '-');
+  setTxt('dg-cap', (data.capRemaining != null && data.capTotal != null) ? `${data.capRemaining}/${data.capTotal}` : '-');
   setTxt('dg-faults', (data.faults && data.faults.length) ? data.faults.join(', ') : t('dash.grid.faults.ok'));
   const faultsEl = document.getElementById('dg-faults');
   if (faultsEl) faultsEl.style.color = (data.faults && data.faults.length) ? 'var(--danger)' : 'var(--good)';

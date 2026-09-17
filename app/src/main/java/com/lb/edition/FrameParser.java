@@ -41,7 +41,7 @@ final class FrameParser {
     // ── ZYD live model (monitor Frame B) ──
     private int battTemp;
     private int faultWord;
-    private int capUsed, capTotal;
+    private int capRemaining, capTotal;
     private String displayVer = "";
 
     // ── ESC info (head 0x01 cmd 0x07): five 16-byte ASCII strings streamed in 8-byte chunks ──
@@ -103,7 +103,7 @@ final class FrameParser {
         } else if (sub == 0x01 && b.length >= 16) {
             battTemp = s8(b, 7);
             faultWord = u16(b, 8);
-            capUsed = u16(b, 14);
+            capRemaining = u16(b, 14);
             capTotal = u16(b, 12);
             if (b.length >= 23) displayVer = "V" + u8(b, 20) + "." + u8(b, 21) + "." + u8(b, 22);
             settings.updateFromMonitorB(b);
@@ -204,7 +204,7 @@ final class FrameParser {
                 o.put("trip", round1(trip));
                 o.put("total", round1(total));
                 o.put("battTemp", battTemp);
-                o.put("capUsed", capUsed);
+                o.put("capRemaining", capRemaining);
                 o.put("capTotal", capTotal);
                 o.put("faults", faultList());
                 if (!displayVer.isEmpty()) o.put("displayVer", displayVer);
