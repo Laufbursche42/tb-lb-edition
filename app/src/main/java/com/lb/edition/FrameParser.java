@@ -91,7 +91,7 @@ final class FrameParser {
         if (sub == 0x00 && b.length >= 23) {
             battPct = u8(b, 5);
             double s1 = u16(b, 6), s2 = u16(b, 8);
-            speed = Math.max(s1, s2) / 1000.0;
+            speed = Math.max(s1, s2) / 1000.0 * (settings.thousandUnitsEnable ? 100.0 : 1.0);
             volt = u16(b, 10) / 10.0;
             current = s16(b, 12) / 64.0;
             escTemp = s8(b, 14);

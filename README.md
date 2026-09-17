@@ -94,6 +94,8 @@ On scooters that accept a Bluetooth speed command, triple-tap the km/h tile on t
 
 That colour is the app's own memory of what it last sent, not a value the scooter reports back - the register this writes to has no readback on the wire, so there is no way to ask the scooter what its current limit actually is. The colour resets to green on every fresh connection, so a stale "unlocked" state never survives a reconnect.
 
+**Not to be confused with the "Vehicle lock" row on the Scooter settings page** - that one locks/unlocks the vehicle itself (like an immobiliser), a separate feature with its own separate command. It has no effect on the speed limit.
+
 <p align="center"><img src="screenshots/speed-unlock.png" width="260" alt="Speed unlock - triple-tap the km/h tile to lock or unlock the speed limit over Bluetooth"></p>
 
 ### In-app updates

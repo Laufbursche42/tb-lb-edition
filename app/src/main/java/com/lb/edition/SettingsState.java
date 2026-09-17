@@ -36,6 +36,9 @@ final class SettingsState {
 
     volatile boolean receivedMonitor = false;   // true once the first 0xAB frame arrived
 
+    // Frame B control-bit 12: when set, FrameParser's speed reading needs an extra *100.
+    volatile boolean thousandUnitsEnable = false;
+
     /** Build the next outgoing monitor frame from the currently maintained fields. */
     synchronized byte[] monitorFrame() {
         int v = CommandBuilder.zydStatusByte(gear, headlight, ambient, cruise, boot, imperial, lock);
@@ -65,5 +68,7 @@ final class SettingsState {
         m1 = t[4] & 0xFF;
         m2 = t[5] & 0xFF;
         m3 = t[6] & 0xFF;
+        int ctrl = ((t[10] & 0xFF) << 8) | (t[11] & 0xFF);
+        thousandUnitsEnable = ((ctrl >> 12) & 1) != 0;
     }
 }

@@ -20,6 +20,7 @@
 window.I18N = {
   en: {
     'whatsnew.points': [
+      "<b>Fixed a stuck speed lock/unlock and a wrong km/h reading.</b> The unlock drum could get stuck showing the same state no matter what you tapped, because it was reading an unrelated per-gear limit instead of the actual command result; it is back to plain local memory now, like the toggle always was. On scooters that need it, speed now gets the extra x100 correction the controller's own app applies - some units were showing a tenth of the real value. The Scooter settings \"Lock\" row is now called \"Vehicle lock\" to make clear it is the immobiliser, not the speed limit.",
       "<b>Exports the LEAT desktop tool reads directly.</b> Ride logs now also carry the canonical field names (realSpeed, SOC, VolPack, singleMile, totalMile, rMotorTemp) and record power in kW, the JSON export is a plain sample array, the CSV comes without BOM and without a tsISO column and the GPX speed is written in m/s. The ride list also shows the real distance again instead of 0 km.",
       "<b>Trittbrett support.</b> This edition talks to Trittbrett scooters: FRITZ, PAUL, SULTAN, HILDE, KALLE, EMMA and the older models advertised simply as \"Scooter\".",
       "<b>Two wire families, one app.</b> A ZYD scooter gets the full telemetry and settings surface; an older LEGACY scooter only reports speed (and sometimes voltage) and only accepts a gear switch and lock/unlock. The dashboard adapts automatically.",
@@ -305,10 +306,10 @@ window.I18N = {
     "scooter.gear.option.t": "T",
     "scooter.gear.section.title": "Gear",
     "scooter.help.hint": "What is this?",
-    "scooter.lock.label": "Lock",
+    "scooter.lock.label": "Vehicle lock",
     "scooter.lock.lock": "Lock",
-    "scooter.lock.toast.lock": "Lock sent",
-    "scooter.lock.toast.unlock": "Unlock sent",
+    "scooter.lock.toast.lock": "Vehicle lock sent",
+    "scooter.lock.toast.unlock": "Vehicle unlock sent",
     "scooter.lock.unlock": "Unlock",
     "scooter.speed.unlock.label": "Unlock speed",
     "scooter.speed.unlock.sublabel": "Triple-tap the km/h tile on the main screen to unlock or lock",
@@ -421,7 +422,7 @@ window.I18N = {
     "tb.help.headlight.text": "Turns the headlight on or off.",
     "tb.help.hornSound.text": "Selects which of the scooter's built-in horn sounds plays (1-30).",
     "tb.help.limitCruise.text": "Caps the speed cruise control is allowed to hold, in km/h (0-60).",
-    "tb.help.lock.text": "The one lock control, sent directly (not through the generic settings channel). Unlock or Lock the scooter. Works on both ZYD and LEGACY scooters, though LEGACY cannot report back its current lock state.",
+    "tb.help.lock.text": "Locks or unlocks the vehicle itself (like an immobiliser) - not the speed limit. For the speed unlock, triple-tap the km/h tile on the main screen instead. Works on both ZYD and LEGACY scooters, though LEGACY cannot report back its current lock state.",
     "tb.help.modDepth.text": "Motor-controller PWM modulation depth. RISKY: an unsuitable value can affect torque and efficiency across the speed range.",
     "tb.help.name.text": "Renames the BLE-advertised name of the scooter (AT channel, max 16 characters). ZYD only.",
     "tb.help.pin.text": "The AT+PWD PIN this scooter expects, if any. Stored on the phone and used on the next connect. Leave empty to clear it.",
@@ -446,6 +447,7 @@ window.I18N = {
 
   de: {
     'whatsnew.points': [
+      "<b>Feststeckende Tempo-Sperre plus falsche km/h-Anzeige behoben.</b> Die Entsperr-Trommel konnte unabhängig vom Antippen dauerhaft denselben Zustand zeigen, weil sie ein unabhängiges Gang-Limit statt des tatsächlichen Befehlsergebnisses gelesen hat; sie ist jetzt wieder reiner lokaler Speicher, wie der Umschalter es immer war. Bei Scootern, die es brauchen, bekommt die Geschwindigkeit jetzt die zusätzliche Mal-100-Korrektur, die auch die Hersteller-App anwendet - manche Geräte zeigten nur ein Zehntel des echten Werts. Die Zeile \"Sperre\" in den Scooter-Einstellungen heißt jetzt \"Fahrzeug-Sperre\", damit klar ist, dass es die Wegfahrsperre ist und nicht das Tempolimit.",
       "<b>Exporte, die das Desktop-Tool LEAT direkt einliest.</b> Ride-Logs tragen jetzt zusätzlich die kanonischen Feldnamen (realSpeed, SOC, VolPack, singleMile, totalMile, rMotorTemp) und speichern die Leistung in kW, der JSON-Export ist ein reines Sample-Array, die CSV kommt ohne BOM und ohne tsISO-Spalte und die GPX-Geschwindigkeit steht in m/s. Die Fahrtenliste zeigt außerdem wieder die echte Distanz statt 0 km.",
       "<b>Unterstützung für Trittbrett.</b> Diese Edition spricht mit Trittbrett-Scootern: FRITZ, PAUL, SULTAN, HILDE, KALLE, EMMA sowie den älteren Modellen, die sich einfach als \"Scooter\" melden.",
       "<b>Zwei Funkprotokolle, eine App.</b> Ein ZYD-Scooter liefert die volle Telemetrie und Einstellungsoberfläche; ein älterer LEGACY-Scooter meldet nur Geschwindigkeit (und manchmal Spannung) und nimmt nur Gangwechsel und Sperren/Entsperren an. Das Dashboard passt sich automatisch an.",
@@ -731,10 +733,10 @@ window.I18N = {
     "scooter.gear.option.t": "T",
     "scooter.gear.section.title": "Gang",
     "scooter.help.hint": "Was ist das?",
-    "scooter.lock.label": "Sperre",
+    "scooter.lock.label": "Fahrzeug-Sperre",
     "scooter.lock.lock": "Sperren",
-    "scooter.lock.toast.lock": "Sperren gesendet",
-    "scooter.lock.toast.unlock": "Entsperren gesendet",
+    "scooter.lock.toast.lock": "Fahrzeug-Sperre gesendet",
+    "scooter.lock.toast.unlock": "Fahrzeug-Entsperrung gesendet",
     "scooter.lock.unlock": "Entsperren",
     "scooter.speed.unlock.label": "Entsperr-Geschwindigkeit",
     "scooter.speed.unlock.sublabel": "Dreifach auf die km/h-Kachel auf dem Hauptbildschirm tippen zum Entsperren oder Sperren",
@@ -847,7 +849,7 @@ window.I18N = {
     "tb.help.headlight.text": "Schaltet den Scheinwerfer ein oder aus.",
     "tb.help.hornSound.text": "Wählt, welcher der eingebauten Hupentöne des Scooters abgespielt wird (1-30).",
     "tb.help.limitCruise.text": "Begrenzt die Geschwindigkeit, die der Tempomat halten darf, in km/h (0-60).",
-    "tb.help.lock.text": "Die eine Sperre, direkt gesendet (nicht über den generischen Einstellungskanal). Scooter sperren oder entsperren. Funktioniert bei ZYD- und LEGACY-Scootern, wobei LEGACY den aktuellen Sperrzustand nicht zurückmelden kann.",
+    "tb.help.lock.text": "Sperrt oder entsperrt das Fahrzeug selbst (wie eine Wegfahrsperre) - nicht das Tempolimit. Für das Tempo-Entsperren dreifach auf die km/h-Kachel im Hauptbildschirm tippen. Funktioniert bei ZYD- und LEGACY-Scootern, wobei LEGACY den aktuellen Sperrzustand nicht zurückmelden kann.",
     "tb.help.modDepth.text": "Modulationstiefe der Motorsteuerung (PWM). RISIKO: ein ungeeigneter Wert kann Drehmoment und Wirkungsgrad über den Geschwindigkeitsbereich beeinflussen.",
     "tb.help.name.text": "Benennt den per BLE beworbenen Namen des Scooters um (AT-Kanal, max. 16 Zeichen). Nur ZYD.",
     "tb.help.pin.text": "Die AT+PWD-PIN, die dieser Scooter erwartet, falls vorhanden. Wird auf dem Handy gespeichert und beim nächsten Verbinden verwendet. Leer lassen, um sie zu löschen.",

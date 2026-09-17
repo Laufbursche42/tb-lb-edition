@@ -16,6 +16,14 @@ To hand-write the notes for a release, add a section headed with its version num
 
 If no matching section exists the notes fall back to the commit messages, so keeping this file up to date is optional.
 
+## 1.0.7
+
+Real-hardware bug report fixes (Hilde 2.0):
+
+- Fixed the speed lock/unlock drum getting stuck showing the same state regardless of what you tapped: it was being re-derived every telemetry frame from an unrelated per-gear limit the app never writes, instead of only changing on your own tap. It is local memory again now, matching what the register it writes has no readback for.
+- Fixed the km/h reading showing a tenth of the real speed on scooters that report the `thousandUnitsEnable` control bit: the extra x100 correction the manufacturer app applies for that bit is now applied here too.
+- The Scooter settings "Lock" row is now labelled "Vehicle lock" - it is the immobiliser, a separate feature from the speed unlock, and the shared wording was confusing the two.
+
 ## 1.0.18
 
 LEAT-compatible ride exports. The desktop tool [LEAT](https://github.com/Laufbursche42/leat) now reads every export of this app directly:
