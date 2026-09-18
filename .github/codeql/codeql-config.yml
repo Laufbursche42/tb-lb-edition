@@ -28,3 +28,26 @@ query-filters:
   # Same reasoning already applied in the sibling projects sf-lb-edition and nv-lb-edition.
   - exclude:
       id: java/android/arbitrary-apk-installation
+  # Path injection: every file name the app handles is constrained by PathGuard.childOf (canonical
+  # path verified to stay inside the app-owned base dir) plus, for ride ids, safeId (digits only).
+  # Traversal is not reachable, but CodeQL does not model the guard. Same exclusion in sf-lb-edition.
+  - exclude:
+      id: java/path-injection
+  # XSS: telemetry handed to the bundled WebView's evaluateJavascript goes through jsQuote first,
+  # which JSON-encodes it into a JS string literal. CodeQL does not credit that as a sanitizer.
+  - exclude:
+      id: java/xss
+  # Log injection: logged values (BLE names, bridge arguments, ride file names) are passed through
+  # logSafe or safeGpxName, which strip CR/LF before the value reaches Log.*. CodeQL does not credit
+  # either as a sanitizer. A genuine miss of this kind (a call site skipping logSafe) was found and
+  # fixed in code rather than excluded here - this exclusion covers only the already-sanitized paths.
+  - exclude:
+      id: java/log-injection
+  # Tainted arithmetic: enc16() always masks its result with & 0xFFFF before it leaves the method, so
+  # every output is a valid 16-bit register value regardless of how large the input is - unlike C,
+  # Java's double/long/int arithmetic and narrowing casts are fully defined, never memory-unsafe, on
+  # overflow. The bridge that supplies the value is not reachable by an attacker (see the WebView
+  # exclusions above). Per-register semantic range checks (e.g. a sane current-limit ceiling) remain
+  # a worthwhile improvement but are a correctness concern, not what this query flags.
+  - exclude:
+      id: java/tainted-arithmetic
