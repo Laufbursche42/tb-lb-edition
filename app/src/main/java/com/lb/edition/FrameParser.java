@@ -224,6 +224,8 @@ final class FrameParser {
                     o.put("boot", settings.boot);
                     o.put("imperial", settings.imperial);
                     o.put("lock", settings.lock);
+                    o.put("blinkLeft", settings.blinkLeft);
+                    o.put("blinkRight", settings.blinkRight);
                     o.put("limitCruise", settings.limitCruise);
                     o.put("m1", settings.m1);
                     o.put("m2", settings.m2);

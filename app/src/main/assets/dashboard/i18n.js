@@ -45,6 +45,11 @@ window.I18N = {
 
     "dash.debug.banner": "&#9888; DEBUG MODE ON: recording logs",
     "dash.grid.batttemp": "Battery temp",
+    "dash.grid.blink": "Turn signal",
+    "dash.grid.blink.both": "Hazards",
+    "dash.grid.blink.left": "Left",
+    "dash.grid.blink.off": "-",
+    "dash.grid.blink.right": "Right",
     "dash.grid.capacity": "Capacity",
     "dash.grid.cruise": "Cruise",
     "dash.grid.cruise.off": "Off",
@@ -472,6 +477,11 @@ window.I18N = {
 
     "dash.debug.banner": "&#9888; DEBUG-MODUS AN: Logs werden aufgezeichnet",
     "dash.grid.batttemp": "Akkutemperatur",
+    "dash.grid.blink": "Blinker",
+    "dash.grid.blink.both": "Warnblinker",
+    "dash.grid.blink.left": "Links",
+    "dash.grid.blink.off": "-",
+    "dash.grid.blink.right": "Rechts",
     "dash.grid.capacity": "Kapazität",
     "dash.grid.cruise": "Tempomat",
     "dash.grid.cruise.off": "Aus",

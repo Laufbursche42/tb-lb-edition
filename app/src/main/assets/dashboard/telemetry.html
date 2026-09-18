@@ -160,6 +160,9 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
         <div class="dg-cell"><span class="dg-label" data-i18n="dash.grid.cruise">Cruise</span><span class="dg-value" id="dg-cruise">-</span></div>
       </div>
       <div class="dg-row one-col">
+        <div class="dg-cell"><span class="dg-label" data-i18n="dash.grid.blink">Turn signal</span><span class="dg-value" id="dg-blink">-</span></div>
+      </div>
+      <div class="dg-row one-col">
         <div class="dg-cell"><span class="dg-label" data-i18n="dash.grid.faults">Faults</span><span class="dg-value" id="dg-faults">-</span></div>
       </div>
       <div class="dg-row one-col">
@@ -1241,7 +1244,7 @@ function updateBLEUI(data) {
   const DASH = ['ble-speed','soc-val','gear-val','current-val','esc-temp','mot-temp',
     'm-volt','m-trip','m-total',
     'dg-volt','dg-current','dg-power','dg-batttemp','dg-total','dg-single','dg-rssi','dg-cap',
-    'dg-lock','dg-cruise','dg-faults','dg-ver','dg-legacy-volt'];
+    'dg-lock','dg-cruise','dg-blink','dg-faults','dg-ver','dg-legacy-volt'];
 
   const setLegacyUi = (isLegacy) => { document.body.classList.toggle('is-legacy', isLegacy); };
 
@@ -1336,9 +1339,14 @@ function updateBLEUI(data) {
     const lockEl = document.getElementById('dg-lock');
     if (lockEl) lockEl.style.color = data.lock ? 'var(--danger)' : 'var(--good)';
     setTxt('dg-cruise', data.cruise ? t('dash.grid.cruise.on') : t('dash.grid.cruise.off'));
+    setTxt('dg-blink', data.blinkLeft && data.blinkRight ? t('dash.grid.blink.both')
+      : data.blinkLeft ? t('dash.grid.blink.left')
+      : data.blinkRight ? t('dash.grid.blink.right')
+      : t('dash.grid.blink.off'));
   } else {
     setTxt('dg-lock', '-');
     setTxt('dg-cruise', '-');
+    setTxt('dg-blink', '-');
   }
   updateQuickToggles(data);
 

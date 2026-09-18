@@ -26,6 +26,8 @@ final class SettingsState {
     volatile boolean boot = false;      // kickstart / zero-start
     volatile boolean imperial = false;  // false = km/h, true = mph
     volatile boolean lock = false;
+    volatile boolean blinkLeft = false;
+    volatile boolean blinkRight = false;
 
     // Read-mostly fields from monitor Frame B; m1/m2/m3 have no known per-gear meaning on any current
     // Trittbrett model (GearType has only two values app-wide) but must be resent unchanged.
@@ -58,6 +60,8 @@ final class SettingsState {
         imperial = ((status >> 6) & 1) != 0;
         cruise = ((status >> 9) & 1) != 0;
         lock = ((status >> 11) & 1) != 0;
+        blinkRight = ((status >> 13) & 1) != 0;
+        blinkLeft = ((status >> 14) & 1) != 0;
         ambient = ((status >> 15) & 1) != 0;
         receivedMonitor = true;
     }
