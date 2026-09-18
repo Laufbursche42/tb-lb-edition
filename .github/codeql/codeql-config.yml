@@ -23,3 +23,8 @@ query-filters:
       id: java/android/webview-addjavascriptinterface
   - exclude:
       id: java/android/websettings-javascript-enabled
+  # APK installation: this is the app's own update path. The URL is allowlisted to github.com and
+  # githubusercontent.com over HTTPS (isTrustedApkUrl) and install sits behind the user's consent.
+  # Same reasoning already applied in the sibling projects sf-lb-edition and nv-lb-edition.
+  - exclude:
+      id: java/android/arbitrary-apk-installation
