@@ -46,7 +46,7 @@ final class FrameParser {
 
     // ── ESC info (head 0x01 cmd 0x07): five 16-byte ASCII strings streamed in 8-byte chunks ──
     private final byte[] escInfoBuf = new byte[80];
-    private String fwModel = "", fwHardware = "", fwBoot = "", fwFirmware = "";
+    private String fwModel = "", fwHardware = "", fwBoot = "", fwFirmware = "", fwUniquecode = "";
 
     // ── Legacy live model ──
     private double legacySpeed, legacyVolt;
@@ -116,11 +116,12 @@ final class FrameParser {
         for (int i = 0; i < 8 && (5 + i) < b.length && (off + i) < escInfoBuf.length; i++) {
             escInfoBuf[off + i] = b[5 + i];
         }
-        if (off + 8 >= 64) {
+        if (off + 8 >= 80) {
             fwModel = asciiClean(escInfoBuf, 0, 16);
             fwHardware = asciiClean(escInfoBuf, 16, 32);
             fwBoot = asciiClean(escInfoBuf, 32, 48);
             fwFirmware = asciiClean(escInfoBuf, 48, 64);
+            fwUniquecode = asciiClean(escInfoBuf, 64, 80);
         }
     }
 
@@ -212,6 +213,7 @@ final class FrameParser {
                 if (!fwModel.isEmpty()) o.put("fwModel", fwModel);
                 if (!fwHardware.isEmpty()) o.put("fwHardware", fwHardware);
                 if (!fwBoot.isEmpty()) o.put("fwBoot", fwBoot);
+                if (!fwUniquecode.isEmpty()) o.put("fwUniquecode", fwUniquecode);
 
                 // Maintained base params (SettingsState.bp), so the settings page can prefill without
                 // ever writing a stale value back - mirrors settingsReady()/received71 on the base app.
