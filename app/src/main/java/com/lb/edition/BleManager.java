@@ -547,12 +547,16 @@ final class BleManager {
     }
 
     /** Write straight to the characteristic, bypassing the serialised queue - only for the fixed
-     *  handshake burst, which is itself already time-spaced and must not wait behind other writes. */
+     *  handshake burst, which is itself already time-spaced and must not wait behind other writes.
+     *  Always WRITE_TYPE_DEFAULT (with response), matching tb-unlock's writeValueWithResponse for the
+     *  same sendZydParam burst - unlike doWrite below, never inherit WRITE_TYPE_NO_RESPONSE from the
+     *  idle keepalive, which shares this same characteristic object and its mutable write-type state. */
     private void writeDirect(byte[] frame) {
         try {
             BluetoothGatt g = gatt;
             BluetoothGattCharacteristic wc = writeChar;
             if (g == null || wc == null || frame == null) return;
+            wc.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
             wc.setValue(frame);
             g.writeCharacteristic(wc);
         } catch (Throwable t) {
