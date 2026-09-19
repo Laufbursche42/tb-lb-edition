@@ -8,46 +8,30 @@ queries:
   - uses: security-extended
 
 query-filters:
-  # Missing certificate pinning: the external hosts (GitHub releases, brouter.de, the mapsforge
-  # mirror) rotate intermediates too often to pin safely without a live device to verify against.
-  # The APK-update path is instead restricted to a github.com/githubusercontent.com allowlist
-  # (MainActivity.isTrustedApkUrl) and cleartext is off app-wide (network_security_config.xml).
+  # External hosts rotate intermediates too often to pin; APK updates are URL-allowlisted instead
+  # (MainActivity.isTrustedApkUrl).
   - exclude:
       id: java/android/missing-certificate-pinning
-  # The app has exactly one WebView (the bundled offline dashboard) and exactly one
-  # addJavascriptInterface/setJavaScriptEnabled call, both inherent to that feature. The WebView's
-  # own WebViewClient.shouldOverrideUrlLoading cancels navigation to anything outside
-  # file:///android_asset/, so no remote or attacker-controlled page can ever load into it and
-  # reach the bridge. Not something a data-flow fix can change without dropping the dashboard.
+  # One WebView, pinned to file:///android_asset/ via shouldOverrideUrlLoading - no attacker page
+  # can ever load and reach the JS bridge.
   - exclude:
       id: java/android/webview-addjavascriptinterface
   - exclude:
       id: java/android/websettings-javascript-enabled
-  # APK installation: this is the app's own update path. The URL is allowlisted to github.com and
-  # githubusercontent.com over HTTPS (isTrustedApkUrl) and install sits behind the user's consent.
-  # Same reasoning already applied in the sibling projects sf-lb-edition and nv-lb-edition.
+  # App's own update path, URL-allowlisted and gated behind the user's install consent.
   - exclude:
       id: java/android/arbitrary-apk-installation
-  # Path injection: every file name the app handles is constrained by PathGuard.childOf (canonical
-  # path verified to stay inside the app-owned base dir) plus, for ride ids, safeId (digits only).
-  # Traversal is not reachable, but CodeQL does not model the guard. Same exclusion in sf-lb-edition.
+  # Every path goes through PathGuard.childOf or safeId; CodeQL just doesn't model the guard.
   - exclude:
       id: java/path-injection
-  # XSS: telemetry handed to the bundled WebView's evaluateJavascript goes through jsQuote first,
-  # which JSON-encodes it into a JS string literal. CodeQL does not credit that as a sanitizer.
+  # evaluateJavascript input goes through jsQuote first; CodeQL doesn't credit that as a sanitizer.
   - exclude:
       id: java/xss
-  # Log injection: logged values (BLE names, bridge arguments, ride file names) are passed through
-  # logSafe or safeGpxName, which strip CR/LF before the value reaches Log.*. CodeQL does not credit
-  # either as a sanitizer. A genuine miss of this kind (a call site skipping logSafe) was found and
-  # fixed in code rather than excluded here - this exclusion covers only the already-sanitized paths.
+  # Logged values go through logSafe/safeGpxName (strip CR/LF); CodeQL doesn't credit that as a
+  # sanitizer. A real miss of this (a call site skipping logSafe) was found and fixed in code.
   - exclude:
       id: java/log-injection
-  # Tainted arithmetic: enc16() always masks its result with & 0xFFFF before it leaves the method, so
-  # every output is a valid 16-bit register value regardless of how large the input is - unlike C,
-  # Java's double/long/int arithmetic and narrowing casts are fully defined, never memory-unsafe, on
-  # overflow. The bridge that supplies the value is not reachable by an attacker (see the WebView
-  # exclusions above). Per-register semantic range checks (e.g. a sane current-limit ceiling) remain
-  # a worthwhile improvement but are a correctness concern, not what this query flags.
+  # enc16() masks every result with & 0xFFFF, so overflow never escapes as an out-of-range value;
+  # the JS bridge feeding it isn't attacker-reachable (see WebView note above).
   - exclude:
       id: java/tainted-arithmetic
