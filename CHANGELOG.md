@@ -16,6 +16,10 @@ To hand-write the notes for a release, add a section headed with its version num
 
 If no matching section exists the notes fall back to the commit messages, so keeping this file up to date is optional.
 
+## 1.0.16
+
+Internal only: every release from now on gets its own section here instead of falling back to raw commit subjects, and the in-app What's New list was brought up to date with the fixes since 1.0.7. No app behaviour changed.
+
 ## 1.0.15
 
 Internal only: trimmed the CodeQL exclusion comments in `.github/codeql/codeql-config.yml` down to one or two lines each. No app behaviour changed.
