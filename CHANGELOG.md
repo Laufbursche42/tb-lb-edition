@@ -16,6 +16,38 @@ To hand-write the notes for a release, add a section headed with its version num
 
 If no matching section exists the notes fall back to the commit messages, so keeping this file up to date is optional.
 
+## 1.0.15
+
+Internal only: trimmed the CodeQL exclusion comments in `.github/codeql/codeql-config.yml` down to one or two lines each. No app behaviour changed.
+
+## 1.0.14
+
+Fixed the speed lock/unlock BLE write silently having no effect on some scooters (reported on a Hilde 2.0): the register-write burst that `setSpeed()` uses shared its Bluetooth characteristic object with the idle keepalive writes, and inherited whatever write type (with/without response) the keepalive had last set instead of always requesting one explicitly. It now always writes with response for that burst, matching what the web tool (tb-unlock) already did.
+
+## 1.0.13
+
+Internal only: four more CodeQL findings (path handling, the dashboard's JS bridge, log lines, register-write arithmetic) reviewed and documented as already covered by existing guards (`PathGuard`, `jsQuote`, `logSafe`, the 16-bit register mask) rather than fixed one alert at a time. No app behaviour changed.
+
+## 1.0.12
+
+Internal only: documented why the in-app updater's CodeQL finding is a false positive (the download URL is host-allowlisted and installing still needs your confirmation). No app behaviour changed.
+
+## 1.0.11
+
+The Scooter info page now also shows the controller's "Uniquecode" string alongside Model/Hardware/Bootloader/Firmware - it was being received but never parsed out due to an off-by-one in where the five ESC-info strings were split.
+
+## 1.0.10
+
+Added a turn-signal (left/right) indicator to the live dashboard - the scooter was already reporting this, it just was not read or shown anywhere yet.
+
+## 1.0.9
+
+Fixed the capacity tile on the Scooter info page: the "used" capacity value was actually the *remaining* capacity misread from the wrong field name since the Trittbrett port. The number shown was always correct, only its label was backwards.
+
+## 1.0.8
+
+Fixed a Bluetooth device address going into the log unsanitised (every other logged value already was). Fixed the speed register write accepting any number without enforcing the app's own documented 60 km/h ceiling. Also reviewed and documented two CodeQL findings about the dashboard's JavaScript bridge as inherent to a single, navigation-locked local WebView.
+
 ## 1.0.7
 
 Real-hardware bug report fixes (Hilde 2.0):

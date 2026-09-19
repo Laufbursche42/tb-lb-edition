@@ -20,6 +20,10 @@
 window.I18N = {
   en: {
     'whatsnew.points': [
+      "<b>Fixed speed lock/unlock sometimes doing nothing.</b> The app could send the unlock/lock command in a way some scooters silently ignore, while still showing it as sent successfully. It now always sends it the more reliable way, matching how the web tool always did it.",
+      "<b>Scooter info now also shows the controller's Uniquecode.</b> It was already being received but never parsed out due to a small bug in how the five ESC-info strings were split.",
+      "<b>Turn-signal indicator on the dashboard.</b> Left/right blinker state, already reported by the scooter, is now read and shown.",
+      "<b>Fixed the capacity tile's label.</b> The number was always correct; only its label had \"used\" and \"remaining\" backwards.",
       "<b>Fixed a stuck speed lock/unlock and a wrong km/h reading.</b> The unlock drum could get stuck showing the same state no matter what you tapped, because it was reading an unrelated per-gear limit instead of the actual command result; it is back to plain local memory now, like the toggle always was. On scooters that need it, speed now gets the extra x100 correction the controller's own app applies - some units were showing a tenth of the real value. The Scooter settings \"Lock\" row is now called \"Vehicle lock\" to make clear it is the immobiliser, not the speed limit.",
       "<b>Exports the LEAT desktop tool reads directly.</b> Ride logs now also carry the canonical field names (realSpeed, SOC, VolPack, singleMile, totalMile, rMotorTemp) and record power in kW, the JSON export is a plain sample array, the CSV comes without BOM and without a tsISO column and the GPX speed is written in m/s. The ride list also shows the real distance again instead of 0 km.",
       "<b>Trittbrett support.</b> This edition talks to Trittbrett scooters: FRITZ, PAUL, SULTAN, HILDE, KALLE, EMMA and the older models advertised simply as \"Scooter\".",
@@ -453,6 +457,10 @@ window.I18N = {
 
   de: {
     'whatsnew.points': [
+      "<b>Sperren/Entsperren der Geschwindigkeit manchmal wirkungslos behoben.</b> Die App konnte den Sperr-/Entsperr-Befehl auf eine Art senden, die manche Scooter stillschweigend ignorieren, während die App trotzdem Erfolg anzeigte. Jetzt wird er immer auf die zuverlässigere Art gesendet, genau wie es das Web-Tool schon immer gemacht hat.",
+      "<b>Scooter-Info zeigt jetzt auch den Uniquecode des Controllers.</b> Der kam schon immer an, wurde aber durch einen kleinen Fehler beim Aufteilen der fünf ESC-Info-Strings nie ausgelesen.",
+      "<b>Blinker-Anzeige im Dashboard.</b> Der Blinkerzustand links/rechts, den der Scooter schon immer gemeldet hat, wird jetzt ausgelesen und angezeigt.",
+      "<b>Beschriftung der Kapazitäts-Kachel korrigiert.</b> Die Zahl war immer richtig, nur die Beschriftung hatte \"verbraucht\" und \"Rest\" vertauscht.",
       "<b>Feststeckende Tempo-Sperre plus falsche km/h-Anzeige behoben.</b> Die Entsperr-Trommel konnte unabhängig vom Antippen dauerhaft denselben Zustand zeigen, weil sie ein unabhängiges Gang-Limit statt des tatsächlichen Befehlsergebnisses gelesen hat; sie ist jetzt wieder reiner lokaler Speicher, wie der Umschalter es immer war. Bei Scootern, die es brauchen, bekommt die Geschwindigkeit jetzt die zusätzliche Mal-100-Korrektur, die auch die Hersteller-App anwendet - manche Geräte zeigten nur ein Zehntel des echten Werts. Die Zeile \"Sperre\" in den Scooter-Einstellungen heißt jetzt \"Fahrzeug-Sperre\", damit klar ist, dass es die Wegfahrsperre ist und nicht das Tempolimit.",
       "<b>Exporte, die das Desktop-Tool LEAT direkt einliest.</b> Ride-Logs tragen jetzt zusätzlich die kanonischen Feldnamen (realSpeed, SOC, VolPack, singleMile, totalMile, rMotorTemp) und speichern die Leistung in kW, der JSON-Export ist ein reines Sample-Array, die CSV kommt ohne BOM und ohne tsISO-Spalte und die GPX-Geschwindigkeit steht in m/s. Die Fahrtenliste zeigt außerdem wieder die echte Distanz statt 0 km.",
       "<b>Unterstützung für Trittbrett.</b> Diese Edition spricht mit Trittbrett-Scootern: FRITZ, PAUL, SULTAN, HILDE, KALLE, EMMA sowie den älteren Modellen, die sich einfach als \"Scooter\" melden.",
