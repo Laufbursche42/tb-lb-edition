@@ -100,6 +100,7 @@ final class BleManager {
     private volatile boolean notifyReady = false;
     private volatile boolean connected = false;
     private volatile boolean charsSetupDone = false;
+    private volatile boolean servicesDiscoveryStarted = false;
 
     /** "ZYD" or "LEGACY". Decided from the advertised name, confirmed/overridden by the GATT
      *  service actually found on connect. */
@@ -337,6 +338,16 @@ final class BleManager {
         }
     }
 
+    /** Starts service discovery exactly once per connection - triggered by onMtuChanged, with
+     *  DISCOVER_DELAY_MS as a fallback in case that callback never arrives on this device. */
+    private void discoverServicesOnce() {
+        synchronized (this) {
+            if (servicesDiscoveryStarted) return;
+            servicesDiscoveryStarted = true;
+        }
+        try { if (gatt != null) gatt.discoverServices(); } catch (Throwable ignored) {}
+    }
+
     // ── GATT callback ──
 
     private long frameCount = 0;
@@ -346,12 +357,14 @@ final class BleManager {
             if (newState == BluetoothGatt.STATE_CONNECTED) {
                 Log.i(TAG, "GATT connected");
                 pushState("discovering");
+                servicesDiscoveryStarted = false;
                 // ZYD monitor-A frames are up to 25 bytes (23 payload + 2 CRC), over the default
                 // ATT MTU's 20 usable bytes - request a bigger MTU so a frame is never truncated.
+                // Wait for onMtuChanged before discovering services instead of racing it on a fixed
+                // timer - overlapping GATT operations are unreliable on some Android BLE stacks.
+                // DISCOVER_DELAY_MS is only a fallback in case that callback never arrives.
                 try { if (g != null) g.requestMtu(64); } catch (Throwable ignored) {}
-                main.postDelayed(() -> {
-                    try { if (gatt != null) gatt.discoverServices(); } catch (Throwable ignored) {}
-                }, DISCOVER_DELAY_MS);
+                main.postDelayed(() -> discoverServicesOnce(), DISCOVER_DELAY_MS);
             } else if (newState == BluetoothGatt.STATE_DISCONNECTED) {
                 Log.i(TAG, "GATT disconnected status=" + status);
                 connected = false;
@@ -418,6 +431,7 @@ final class BleManager {
         @Override
         public void onMtuChanged(BluetoothGatt g, int mtu, int status) {
             Log.i(TAG, "MTU changed to " + mtu + " status=" + status);
+            discoverServicesOnce();
         }
 
         @Override

@@ -52,6 +52,10 @@ Fixed the capacity tile on the Scooter info page: the "used" capacity value was 
 
 Fixed a Bluetooth device address going into the log unsanitised (every other logged value already was). Fixed the speed register write accepting any number without enforcing the app's own documented 60 km/h ceiling. Also reviewed and documented two CodeQL findings about the dashboard's JavaScript bridge as inherent to a single, navigation-locked local WebView.
 
+## 1.0.18
+
+Fixed a Bluetooth connection race that could leave the scooter refusing throttle input (reported on a Hilde 2.0): after connecting, the app requested a larger BLE MTU and started discovering services on a fixed timer at the same time, instead of waiting for the MTU request to actually finish first. On some phones the two overlapping Bluetooth operations could interfere with each other, especially on reconnect. Service discovery now waits for the MTU negotiation to complete.
+
 ## 1.0.7
 
 Real-hardware bug report fixes (Hilde 2.0):
@@ -60,7 +64,11 @@ Real-hardware bug report fixes (Hilde 2.0):
 - Fixed the km/h reading showing a tenth of the real speed on scooters that report the `thousandUnitsEnable` control bit: the extra x100 correction the manufacturer app applies for that bit is now applied here too.
 - The Scooter settings "Lock" row is now labelled "Vehicle lock" - it is the immobiliser, a separate feature from the speed unlock, and the shared wording was confusing the two.
 
-## 1.0.18
+## 1.0.30
+
+(Renumbered from a placeholder "1.0.18" heading that predated the run of releases above and would
+otherwise collide with the real, sequential release count - moved out of the way to a number well past
+the current run instead of guessing the exact number this content actually shipped under.)
 
 LEAT-compatible ride exports. The desktop tool [LEAT](https://github.com/Laufbursche42/leat) now reads every export of this app directly:
 
