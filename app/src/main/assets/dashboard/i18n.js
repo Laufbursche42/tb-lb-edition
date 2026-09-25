@@ -21,7 +21,7 @@ window.I18N = {
   en: {
     'whatsnew.points': [
       "<b>Fixed a connection race that could leave the scooter refusing throttle input.</b> After connecting, the app requested a larger Bluetooth MTU and started discovering services at the same time instead of waiting for the MTU request to finish first; on some phones this could interfere with the connection, especially on reconnect.",
-      "<b>Fixed speed lock/unlock sometimes doing nothing.</b> The app could send the unlock/lock command in a way some scooters silently ignore, while still showing it as sent successfully. It now always sends it the more reliable way, matching how the web tool always did it.",
+      "<b>Fixed speed lock/unlock sometimes doing nothing, and sometimes freezing the live display.</b> The three Bluetooth writes that make up a lock/unlock command ran on a fixed timer instead of waiting for each one to actually finish, and a background keepalive write could slip in between them - either could make the scooter silently ignore the command. Both now wait for a real confirmation before continuing, matching how the web tool has always done it.",
       "<b>Scooter info now also shows the controller's Uniquecode.</b> It was already being received but never parsed out due to a small bug in how the five ESC-info strings were split.",
       "<b>Turn-signal indicator on the dashboard.</b> Left/right blinker state, already reported by the scooter, is now read and shown.",
       "<b>Fixed the capacity tile's label.</b> The number was always correct; only its label had \"used\" and \"remaining\" backwards.",
@@ -459,7 +459,7 @@ window.I18N = {
   de: {
     'whatsnew.points': [
       "<b>Verbindungs-Rennen behoben, das den Scooter auf keine Gasannahme mehr stehen lassen konnte.</b> Nach dem Verbinden forderte die App eine größere Bluetooth-MTU an und startete gleichzeitig die Service-Erkennung, statt erst das Ende der MTU-Anfrage abzuwarten. Auf manchen Handys konnte sich das gegenseitig stören, besonders beim erneuten Verbinden.",
-      "<b>Sperren/Entsperren der Geschwindigkeit manchmal wirkungslos behoben.</b> Die App konnte den Sperr-/Entsperr-Befehl auf eine Art senden, die manche Scooter stillschweigend ignorieren, während die App trotzdem Erfolg anzeigte. Jetzt wird er immer auf die zuverlässigere Art gesendet, genau wie es das Web-Tool schon immer gemacht hat.",
+      "<b>Sperren/Entsperren der Geschwindigkeit manchmal wirkungslos behoben, und manchmal fror dabei die Live-Anzeige ein.</b> Die drei Bluetooth-Schreibvorgänge eines Sperr-/Entsperr-Befehls liefen nach fester Zeitvorgabe statt auf den echten Abschluss zu warten, und ein Keepalive-Write im Hintergrund konnte sich dazwischenschieben - beides konnte den Scooter den Befehl stillschweigend ignorieren lassen. Beide warten jetzt auf echte Bestätigung, genau wie es das Web-Tool schon immer gemacht hat.",
       "<b>Scooter-Info zeigt jetzt auch den Uniquecode des Controllers.</b> Der kam schon immer an, wurde aber durch einen kleinen Fehler beim Aufteilen der fünf ESC-Info-Strings nie ausgelesen.",
       "<b>Blinker-Anzeige im Dashboard.</b> Der Blinkerzustand links/rechts, den der Scooter schon immer gemeldet hat, wird jetzt ausgelesen und angezeigt.",
       "<b>Beschriftung der Kapazitäts-Kachel korrigiert.</b> Die Zahl war immer richtig, nur die Beschriftung hatte \"verbraucht\" und \"Rest\" vertauscht.",

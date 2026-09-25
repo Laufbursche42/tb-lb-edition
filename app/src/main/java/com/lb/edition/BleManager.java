@@ -114,6 +114,8 @@ final class BleManager {
 
     private final ArrayDeque<byte[]> writeQueue = new ArrayDeque<>();
     private boolean writing = false;
+    // True during a sendZydParam burst - keeps the queue from draining a keepalive frame into it.
+    private volatile boolean burstActive = false;
 
     BleManager(Context ctx, Listener listener) {
         this.appCtx = ctx.getApplicationContext();
@@ -420,10 +422,13 @@ final class BleManager {
 
         @Override
         public void onCharacteristicWrite(BluetoothGatt g, BluetoothGattCharacteristic c, int status) {
-            // Only the data-channel queue (writeChar) is serialised this way; AT-channel writes
-            // (atWriteChar) go straight to the GATT layer and must not touch this flag/queue, or a
-            // completing AT write can race a still-in-flight data-channel write.
             if (c != writeChar) return;
+            if (burstActive) {
+                Runnable done = pendingBurstDone;
+                pendingBurstDone = null;
+                if (done != null) done.run();
+                return;
+            }
             synchronized (writeQueue) { writing = false; }
             main.postDelayed(BleManager.this::drainWriteQueue, WRITE_GAP_MS);
         }
@@ -560,21 +565,38 @@ final class BleManager {
         }, 620);
     }
 
-    /** Write straight to the characteristic, bypassing the serialised queue - only for the fixed
-     *  handshake burst, which is itself already time-spaced and must not wait behind other writes.
-     *  Always WRITE_TYPE_DEFAULT (with response), matching tb-unlock's writeValueWithResponse for the
-     *  same sendZydParam burst - unlike doWrite below, never inherit WRITE_TYPE_NO_RESPONSE from the
-     *  idle keepalive, which shares this same characteristic object and its mutable write-type state. */
-    private void writeDirect(byte[] frame) {
+    // Set while a burst write's completion is pending - onCharacteristicWrite fires it, not a timer.
+    private volatile Runnable pendingBurstDone = null;
+
+    private void writeDirect(byte[] frame) { writeDirect(frame, null); }
+
+    private static final long BURST_WRITE_TIMEOUT_MS = 2000;
+
+    /** Direct write for the handshake burst, WRITE_TYPE_DEFAULT. onDone fires on real completion
+     *  (like tb-unlock's `await writeFrame`), with a timeout fallback so a burst can't hang forever. */
+    private void writeDirect(byte[] frame, Runnable onDone) {
+        Runnable once = onDone == null ? null : new Runnable() {
+            private boolean ran = false;
+            @Override public void run() {
+                if (ran) return;
+                ran = true;
+                if (pendingBurstDone == this) pendingBurstDone = null;
+                main.removeCallbacks(this);
+                onDone.run();
+            }
+        };
         try {
             BluetoothGatt g = gatt;
             BluetoothGattCharacteristic wc = writeChar;
-            if (g == null || wc == null || frame == null) return;
+            if (g == null || wc == null || frame == null) { if (once != null) once.run(); return; }
             wc.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
             wc.setValue(frame);
-            g.writeCharacteristic(wc);
+            pendingBurstDone = once;
+            if (!g.writeCharacteristic(wc)) { if (once != null) once.run(); return; }
+            if (once != null) main.postDelayed(once, BURST_WRITE_TIMEOUT_MS);
         } catch (Throwable t) {
             Log.e(TAG, "writeDirect failed", t);
+            if (once != null) once.run();
         }
     }
 
@@ -634,7 +656,7 @@ final class BleManager {
     }
 
     private void drainWriteQueue() {
-        if (!notifyReady) return;
+        if (!notifyReady || burstActive) return;
         byte[] frame;
         synchronized (writeQueue) {
             if (writing) return;
@@ -679,16 +701,16 @@ final class BleManager {
     private void sendZydParam(byte[] frame) {
         if (!connected || writeChar == null) return;
         stopIdleKeep();
-        seq.postDelayed(() -> {
-            writeDirect(CommandBuilder.zydTranFrame(0x00));
-            seq.postDelayed(() -> {
-                writeDirect(frame);
-                seq.postDelayed(() -> {
-                    writeDirect(CommandBuilder.zydTranFrame(0xFF));
+        burstActive = true;
+        seq.postDelayed(() -> writeDirect(CommandBuilder.zydTranFrame(0x00), () ->
+            seq.postDelayed(() -> writeDirect(frame, () ->
+                seq.postDelayed(() -> writeDirect(CommandBuilder.zydTranFrame(0xFF), () -> {
+                    burstActive = false;
                     if (connected) startZydIdleKeep();
-                }, 30);
-            }, 30);
-        }, 150);
+                    drainWriteQueue();
+                }), 30)
+            ), 30)
+        ), 150);
     }
 
     // ── Base-param write (ZYD monitor frame): change one field, resend the rest unchanged ──

@@ -16,6 +16,10 @@ To hand-write the notes for a release, add a section headed with its version num
 
 If no matching section exists the notes fall back to the commit messages, so keeping this file up to date is optional.
 
+## 1.0.19
+
+Fixed the speed lock/unlock write still failing on some scooters even after 1.0.18's connection fix (reported on a Hilde 1 and a Hilde 2): the three Bluetooth writes that make up a lock/unlock command were sent on a fixed 30 ms timer instead of waiting for each one to actually finish, and a background keepalive write could slip in between them - either could make the controller silently ignore the whole command, sometimes also freezing the live telemetry until an unrelated setting was touched. Both writes now wait for the real Bluetooth confirmation before continuing, matching how the web tool has always done it, and nothing else can write to the scooter while a lock/unlock command is in progress.
+
 ## 1.0.16
 
 Internal only: every release from now on gets its own section here instead of falling back to raw commit subjects, and the in-app What's New list was brought up to date with the fixes since 1.0.7. No app behaviour changed.
