@@ -16,6 +16,11 @@ To hand-write the notes for a release, add a section headed with its version num
 
 If no matching section exists the notes fall back to the commit messages, so keeping this file up to date is optional.
 
+## 1.0.20
+
+- Display settings now has a Font sizes section: set the speed value and its label, the upper tiles and each lower tile row (Tile row 1 and Tile row 2) independently, each with its own range. Reset puts them all back to the built-in sizes.
+- Report issue: the Version / disclaimer dialog has a new "Report issue" button that opens a pre-filled GitHub issue with the app version, Android version, phone model and your (already masked) debug log attached. No personal data is collected.
+
 ## 1.0.19
 
 Fixed the speed lock/unlock write still failing on some scooters even after 1.0.18's connection fix (reported on a Hilde 1 and a Hilde 2): the three Bluetooth writes that make up a lock/unlock command were sent on a fixed 30 ms timer instead of waiting for each one to actually finish, and a background keepalive write could slip in between them - either could make the controller silently ignore the whole command, sometimes also freezing the live telemetry until an unrelated setting was touched. Both writes now wait for the real Bluetooth confirmation before continuing, matching how the web tool has always done it, and nothing else can write to the scooter while a lock/unlock command is in progress.

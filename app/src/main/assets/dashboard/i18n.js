@@ -20,6 +20,8 @@
 window.I18N = {
   en: {
     'whatsnew.points': [
+      "<b>Report an issue from the app.</b> The Version / disclaimer dialog now has a \"Report issue\" button. It opens a pre-filled GitHub issue with your app version, Android version and phone model and attaches your (already masked) debug log - no personal data. Just describe what happened and submit.",
+      "<b>Choose your tile font sizes.</b> Display settings now has a Font sizes section: set the speed value and its label, the upper tiles and each lower tile row independently, each with its own range. Reset puts them all back to the built-in sizes.",
       "<b>Fixed a connection race that could leave the scooter refusing throttle input.</b> After connecting, the app requested a larger Bluetooth MTU and started discovering services at the same time instead of waiting for the MTU request to finish first; on some phones this could interfere with the connection, especially on reconnect.",
       "<b>Fixed speed lock/unlock sometimes doing nothing, and sometimes freezing the live display.</b> The three Bluetooth writes that make up a lock/unlock command ran on a fixed timer instead of waiting for each one to actually finish, and a background keepalive write could slip in between them - either could make the scooter silently ignore the command. Both now wait for a real confirmation before continuing, matching how the web tool has always done it.",
       "<b>Scooter info now also shows the controller's Uniquecode.</b> It was already being received but never parsed out due to a small bug in how the five ESC-info strings were split.",
@@ -127,6 +129,19 @@ window.I18N = {
     "display.tile.color": "Tile colour",
     "display.tile.oled": "Pure black switches OLED pixels off here too",
     "display.title": "Display settings",
+    "display.fonts.title": "Font sizes",
+    "display.fonts.hint": "Font size for every tile text line on the main screen, set individually. On the live-value tiles that is the title (top), the value (middle) and the unit (bottom). The screen still auto-scales to the height, so it is mainly the ratio between the sizes that shows.",
+    "display.fonts.speed.val": "Speed - value",
+    "display.fonts.speed.lbl": "Speed - label",
+    "display.fonts.hero.val": "Upper tiles - value",
+    "display.fonts.hero.lbl": "Upper tiles - label",
+    "display.fonts.m1.top": "Tile row 1 - title (top)",
+    "display.fonts.m1.mid": "Tile row 1 - value (middle)",
+    "display.fonts.m1.bot": "Tile row 1 - unit (bottom)",
+    "display.fonts.m2.top": "Tile row 2 - title (top)",
+    "display.fonts.m2.mid": "Tile row 2 - value (middle)",
+    "display.fonts.m2.bot": "Tile row 2 - unit (bottom)",
+    "display.fonts.reset": "Reset font sizes",
 
     "disclaimer.accept": "Accept",
     "disclaimer.close": "Close",
@@ -139,6 +154,7 @@ window.I18N = {
 
     "fw.verinfo.appversion.label": "App version:",
     "fw.verinfo.close": "Close",
+    "fw.verinfo.report": "Report issue",
     "fw.verinfo.disclaimer": "This is not an official Trittbrett app. The developer (Laufbursche) is not affiliated with, endorsed by or connected to Trittbrett. Trittbrett is a trademark of its respective owner.",
     "fw.verinfo.license": "Laufbursche Edition is source-available under the PolyForm Noncommercial License 1.0.0 with Additional Terms. Read the <span class=\"link-ble\" onclick=\"openExt('https://github.com/Laufbursche42/tb-lb-edition/blob/main/README.md')\">GitHub README</span> and <span class=\"link-ble\" onclick=\"openExt('https://github.com/Laufbursche42/tb-lb-edition/blob/main/license.md')\">License</span>.",
     "fw.verinfo.map.attribution": "Offline maps and POI data (camping / charging) are &copy; OpenStreetMap contributors, licensed under the ODbL 1.0.",
@@ -458,6 +474,8 @@ window.I18N = {
 
   de: {
     'whatsnew.points': [
+      "<b>Fehler direkt aus der App melden.</b> Der Version-/Haftungs-Dialog hat jetzt einen \"Fehler melden\"-Knopf. Er öffnet ein vorausgefülltes GitHub-Issue mit App-Version, Android-Version und Handy-Modell und hängt dein (bereits maskiertes) Debug-Log an - keine persönlichen Daten. Einfach beschreiben was passiert ist und absenden.",
+      "<b>Schriftgrößen der Kacheln selbst wählen.</b> Die Display-Einstellungen haben jetzt den Bereich Schriftgrößen: Tacho-Wert und -Beschriftung, die oberen Kacheln und jede untere Kachelreihe einzeln einstellbar, jeweils mit eigenem Bereich. Zurücksetzen stellt alles auf die eingebauten Größen zurück.",
       "<b>Verbindungs-Rennen behoben, das den Scooter auf keine Gasannahme mehr stehen lassen konnte.</b> Nach dem Verbinden forderte die App eine größere Bluetooth-MTU an und startete gleichzeitig die Service-Erkennung, statt erst das Ende der MTU-Anfrage abzuwarten. Auf manchen Handys konnte sich das gegenseitig stören, besonders beim erneuten Verbinden.",
       "<b>Sperren/Entsperren der Geschwindigkeit manchmal wirkungslos behoben, und manchmal fror dabei die Live-Anzeige ein.</b> Die drei Bluetooth-Schreibvorgänge eines Sperr-/Entsperr-Befehls liefen nach fester Zeitvorgabe statt auf den echten Abschluss zu warten, und ein Keepalive-Write im Hintergrund konnte sich dazwischenschieben - beides konnte den Scooter den Befehl stillschweigend ignorieren lassen. Beide warten jetzt auf echte Bestätigung, genau wie es das Web-Tool schon immer gemacht hat.",
       "<b>Scooter-Info zeigt jetzt auch den Uniquecode des Controllers.</b> Der kam schon immer an, wurde aber durch einen kleinen Fehler beim Aufteilen der fünf ESC-Info-Strings nie ausgelesen.",
@@ -565,6 +583,19 @@ window.I18N = {
     "display.tile.color": "Kachelfarbe",
     "display.tile.oled": "Reines Schwarz schaltet OLED-Pixel auch hier ab",
     "display.title": "Anzeige-Einstellungen",
+    "display.fonts.title": "Schriftgrößen",
+    "display.fonts.hint": "Schriftgröße für jede Text-Zeile der Kacheln auf dem Hauptbildschirm, einzeln einstellbar. Bei den Live-Wert-Kacheln sind das Titel (oben), Wert (Mitte) und Einheit (unten). Der Bildschirm skaliert sich weiterhin automatisch auf die Höhe, darum wirkt vor allem das Verhältnis der Größen zueinander.",
+    "display.fonts.speed.val": "Tacho - Wert",
+    "display.fonts.speed.lbl": "Tacho - Beschriftung",
+    "display.fonts.hero.val": "Obere Kacheln - Wert",
+    "display.fonts.hero.lbl": "Obere Kacheln - Beschriftung",
+    "display.fonts.m1.top": "Kachelreihe 1 - Titel (oben)",
+    "display.fonts.m1.mid": "Kachelreihe 1 - Wert (Mitte)",
+    "display.fonts.m1.bot": "Kachelreihe 1 - Einheit (unten)",
+    "display.fonts.m2.top": "Kachelreihe 2 - Titel (oben)",
+    "display.fonts.m2.mid": "Kachelreihe 2 - Wert (Mitte)",
+    "display.fonts.m2.bot": "Kachelreihe 2 - Einheit (unten)",
+    "display.fonts.reset": "Schriftgrößen zurücksetzen",
 
     "disclaimer.accept": "Annehmen",
     "disclaimer.close": "Schließen",
@@ -577,6 +608,7 @@ window.I18N = {
 
     "fw.verinfo.appversion.label": "App-Version:",
     "fw.verinfo.close": "Schließen",
+    "fw.verinfo.report": "Fehler melden",
     "fw.verinfo.disclaimer": "Das ist keine offizielle Trittbrett-App. Der Entwickler (Laufbursche) hat keine Verbindung zu Trittbrett und wird von Trittbrett nicht unterstützt oder empfohlen. Trittbrett ist eine Marke des jeweiligen Inhabers.",
     "fw.verinfo.license": "Laufbursche Edition ist source-available unter der PolyForm Noncommercial License 1.0.0 mit Additional Terms. Lies die <span class=\"link-ble\" onclick=\"openExt('https://github.com/Laufbursche42/tb-lb-edition/blob/main/README.md')\">GitHub README</span> und die <span class=\"link-ble\" onclick=\"openExt('https://github.com/Laufbursche42/tb-lb-edition/blob/main/license.md')\">Lizenz</span>.",
     "fw.verinfo.map.attribution": "Offline-Karten und POI-Daten (Camping / Laden) sind &copy; OpenStreetMap contributors, lizenziert unter der ODbL 1.0.",

@@ -150,7 +150,7 @@ html, body {
   gap: 2px;
 }
 .speed-drum .sd-val {
-  font-size: clamp(42px, 13vw, 64px);
+  font-size: var(--sz-speed-val, clamp(42px, 13vw, 64px));
   font-weight: var(--fw-heavy); line-height: 1;
   letter-spacing: -.02em;
   font-variant-numeric: tabular-nums;
@@ -158,7 +158,7 @@ html, body {
 .speed-drum.ble-drum .sd-val { color: var(--ble); }
 .speed-drum.gps-drum .sd-val { color: var(--gps); }
 .speed-drum .sd-unit {
-  font-size: var(--fs-base); color: var(--label); margin-top: 4px;
+  font-size: var(--sz-speed-lbl, var(--fs-base)); color: var(--label); margin-top: 4px;
   font-weight: var(--fw-medium); letter-spacing: .04em;
 }
 /* Triple-tap the BLE speed tile to unlock/lock (ZYD only) - the "unlocked" class is local UI
@@ -181,17 +181,17 @@ html, body {
   border-radius: var(--radius); padding: 12px 8px 10px;
   display: flex; flex-direction: column; align-items: center;
 }
-/* One uniform value size for every tile (hero and motor), hard-capped at 32px so no display or
-   font-scale setting can blow a value up. Words (e.g. a gear letter) and numbers share the same
-   size; anything too wide is clipped with an ellipsis rather than resized per tile. */
+/* Uniform value size for every tile (hero and motor). The rider can override each row's sizes in
+   Display settings > Font sizes; words (e.g. a gear letter) and numbers share the same size, and
+   anything too wide is clipped with an ellipsis rather than resized per tile. */
 .hero-cell .hc-val {
-  font-size: clamp(20px, 6.5vw, 32px); font-weight: var(--fw-heavy);
+  font-size: var(--sz-hero-val, clamp(20px, 6.5vw, 32px)); font-weight: var(--fw-heavy);
   line-height: 1.05; letter-spacing: -.01em;
   font-variant-numeric: tabular-nums;
   max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .hero-cell .hc-unit {
-  font-size: var(--fs-md); color: var(--label); margin-top: 3px; text-align: center;
+  font-size: var(--sz-hero-lbl, var(--fs-md)); color: var(--label); margin-top: 3px; text-align: center;
 }
 #soc-val { color: var(--good); }
 #gear-val { color: var(--warn); }
@@ -431,6 +431,13 @@ html, body {
 }
 /* Own line under the value, centred like the title and the value above it. */
 .mc-unit { font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--label); }
+/* Rider-adjustable per-row tile font sizes (Display settings > Font sizes); unset falls back to the built-in size. */
+#motor-row .mc-title { font-size: var(--sz-m1-top, var(--fs-sm)); }
+#motor-row .mc-main  { font-size: var(--sz-m1-mid, clamp(20px, 6.5vw, 32px)); }
+#motor-row .mc-unit  { font-size: var(--sz-m1-bot, var(--fs-sm)); }
+#motor-row-2 .mc-title { font-size: var(--sz-m2-top, var(--fs-sm)); }
+#motor-row-2 .mc-main  { font-size: var(--sz-m2-mid, clamp(20px, 6.5vw, 32px)); }
+#motor-row-2 .mc-unit  { font-size: var(--sz-m2-bot, var(--fs-sm)); }
 
 /* Motor tiles: ESC temp, motor temp, power - one row. */
 #motor-area { display: flex; flex-direction: column; gap: var(--gap); }
