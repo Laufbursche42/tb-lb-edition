@@ -16,6 +16,16 @@ To hand-write the notes for a release, add a section headed with its version num
 
 If no matching section exists the notes fall back to the commit messages, so keeping this file up to date is optional.
 
+## 1.0.21
+
+Custom dashboard themes. You can now replace the whole fold layout with your own design and switch back to the built-in one at any time.
+
+- **Theme Manager (Display settings).** Import a theme as a single `.zip` bundle (`theme.html` + `theme.css` + optional `theme.json`), then activate, export or delete it. The active theme's HTML replaces the fold and its CSS is applied live; the built-in layout is always one tap away.
+- **Live data in themes.** A theme binds live values through `data-lb` hooks (`speed`, `soc`, `power`, `gear`) and `data-lb-state` classes (e.g. `park`), refreshed about twice a second. A `data-lb-action="speed-unlock"` element re-arms the triple-tap speed unlock. The hook set matches the shared Laufbursche theme format, so a `.zip` made for another LB app works here too.
+- **Safe import.** Imported HTML is sanitised before it is stored: script tags, iframes, inline event handlers, `javascript:` and `data:` URLs and external resource URLs are stripped. Theme code never runs - only structure and CSS are kept.
+- **Offline theme guide.** A full bilingual (English / German) authoring guide is one tap away in the Theme Manager: the bundle format, every hook, the security model, translations and a complete worked example. No internet needed.
+- **Pin the recording banner.** The route-recording overlay can now be docked to the top of the screen (fixed, not draggable) or left free-floating with an 8-pixel snap grid. Toggle under Settings -> GPS.
+
 ## 1.0.20
 
 - Display settings now has a Font sizes section: set the speed value and its label, the upper tiles and each lower tile row (Tile row 1 and Tile row 2) independently, each with its own range. Reset puts them all back to the built-in sizes.

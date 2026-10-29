@@ -20,6 +20,10 @@
 window.I18N = {
   en: {
     'whatsnew.points': [
+      "<b>Theme Manager.</b> Import your own dashboard layout as a single .zip bundle (theme.html + theme.css + theme.json). The app applies your CSS and binds live speed, battery, power and gear to your <code>data-lb</code> hooks every half second. Activate, export or delete themes from the new Theme manager in Display settings - the built-in layout is always one tap away.",
+      "<b>Theme creation guide.</b> A full offline guide is one tap away in the Theme manager, in English and German. It covers the bundle format, every live-data hook, the security model, translations and a complete working example - no internet needed.",
+      "<b>Safe theme import.</b> Imported HTML is sanitised before storage: script tags, iframes, inline event handlers, <code>javascript:</code> and <code>data:</code> URLs and external resource URLs are removed. Theme code never runs; only structure and CSS are kept.",
+      "<b>Pin or unpin the recording banner.</b> The overlay shown during route recording can now be docked to the top of the screen or left free-floating. Find the toggle in Settings under GPS. When free-floating it snaps to an 8-pixel grid.",
       "<b>Report an issue from the app.</b> The Version / disclaimer dialog now has a \"Report issue\" button. It opens a pre-filled GitHub issue with your app version, Android version and phone model and attaches your (already masked) debug log - no personal data. Just describe what happened and submit.",
       "<b>Choose your tile font sizes.</b> Display settings now has a Font sizes section: set the speed value and its label, the upper tiles and each lower tile row independently, each with its own range. Reset puts them all back to the built-in sizes.",
       "<b>Fixed a connection race that could leave the scooter refusing throttle input.</b> After connecting, the app requested a larger Bluetooth MTU and started discovering services at the same time instead of waiting for the MTU request to finish first; on some phones this could interfere with the connection, especially on reconnect.",
@@ -142,6 +146,21 @@ window.I18N = {
     "display.fonts.m2.mid": "Tile row 2 - value (middle)",
     "display.fonts.m2.bot": "Tile row 2 - unit (bottom)",
     "display.fonts.reset": "Reset font sizes",
+
+    "theme.page.title": "Theme manager",
+    "theme.page.hint": "Import a .zip bundle to customise the dashboard layout. The zip must contain theme.html and theme.css.",
+    "theme.import.action": "&#8681; Import theme (.zip)",
+    "theme.import.hint": "Pick a single .zip file - one zip = one theme.",
+    "theme.guide.btn": "&#128196; Theme creation guide",
+    "theme.guide.title": "Theme Guide",
+    "theme.guide.toc": "Contents",
+    "theme.settings.action": "&#127912; Theme manager",
+    "theme.badge.active": "Active",
+    "theme.action.activate": "Activate",
+    "theme.action.export": "Export",
+    "theme.action.delete": "Delete",
+    "settings.ridebanner.dock.label": "Pin recording banner",
+    "settings.ridebanner.dock.hint": "Keeps banner at fixed position, not draggable",
 
     "disclaimer.accept": "Accept",
     "disclaimer.close": "Close",
@@ -474,6 +493,10 @@ window.I18N = {
 
   de: {
     'whatsnew.points': [
+      "<b>Theme-Manager.</b> Eigenes Dashboard-Layout als einzelne .zip-Datei importieren (theme.html + theme.css + theme.json). Die App wendet dein CSS an und bindet Tempo, Akku, Leistung und Gang alle halbe Sekunde an deine <code>data-lb</code>-Hooks. Themes aktivieren, exportieren oder löschen - über den neuen Theme-Manager in den Anzeige-Einstellungen. Das eingebaute Layout ist immer einen Tipp entfernt.",
+      "<b>Theme-Anleitung in der App.</b> Im Theme-Manager gibt es einen Knopf für die vollständige Offline-Anleitung - auf Deutsch und Englisch. Sie erklärt das Bundle-Format, alle Live-Daten-Hooks, das Sicherheitsmodell, Übersetzungen und ein vollständiges Minimalbeispiel - ohne Internetverbindung.",
+      "<b>Sicherer Theme-Import.</b> Importiertes HTML wird vor der Ablage bereinigt: Script-Tags, Iframes, Inline-Event-Handler, <code>javascript:</code>- und <code>data:</code>-URLs und externe Ressourcen-URLs werden entfernt. Theme-Code wird nie ausgeführt; nur Struktur und CSS bleiben.",
+      "<b>Aufnahme-Banner andocken oder freigeben.</b> Das Overlay, das während der Routenaufnahme erscheint, kann jetzt oben am Bildschirm angedockt oder frei positioniert werden. Den Schalter findest du in den Einstellungen unter GPS. Im freien Modus rastet es in einem 8-Pixel-Raster ein.",
       "<b>Fehler direkt aus der App melden.</b> Der Version-/Haftungs-Dialog hat jetzt einen \"Fehler melden\"-Knopf. Er öffnet ein vorausgefülltes GitHub-Issue mit App-Version, Android-Version und Handy-Modell und hängt dein (bereits maskiertes) Debug-Log an - keine persönlichen Daten. Einfach beschreiben was passiert ist und absenden.",
       "<b>Schriftgrößen der Kacheln selbst wählen.</b> Die Display-Einstellungen haben jetzt den Bereich Schriftgrößen: Tacho-Wert und -Beschriftung, die oberen Kacheln und jede untere Kachelreihe einzeln einstellbar, jeweils mit eigenem Bereich. Zurücksetzen stellt alles auf die eingebauten Größen zurück.",
       "<b>Verbindungs-Rennen behoben, das den Scooter auf keine Gasannahme mehr stehen lassen konnte.</b> Nach dem Verbinden forderte die App eine größere Bluetooth-MTU an und startete gleichzeitig die Service-Erkennung, statt erst das Ende der MTU-Anfrage abzuwarten. Auf manchen Handys konnte sich das gegenseitig stören, besonders beim erneuten Verbinden.",
@@ -596,6 +619,21 @@ window.I18N = {
     "display.fonts.m2.mid": "Kachelreihe 2 - Wert (Mitte)",
     "display.fonts.m2.bot": "Kachelreihe 2 - Einheit (unten)",
     "display.fonts.reset": "Schriftgrößen zurücksetzen",
+
+    "theme.page.title": "Theme-Manager",
+    "theme.page.hint": "Ein .zip-Bundle importieren, um das Dashboard-Layout anzupassen. Die ZIP muss theme.html und theme.css enthalten.",
+    "theme.import.action": "&#8681; Theme importieren (.zip)",
+    "theme.import.hint": "Eine einzige .zip-Datei wählen - eine ZIP = ein Theme.",
+    "theme.guide.btn": "&#128196; Anleitung: Eigenes Theme erstellen",
+    "theme.guide.title": "Theme-Anleitung",
+    "theme.guide.toc": "Inhalt",
+    "theme.settings.action": "&#127912; Theme-Manager",
+    "theme.badge.active": "Aktiv",
+    "theme.action.activate": "Aktivieren",
+    "theme.action.export": "Exportieren",
+    "theme.action.delete": "Löschen",
+    "settings.ridebanner.dock.label": "Aufnahme-Banner fixieren",
+    "settings.ridebanner.dock.hint": "Banner bleibt oben fixiert, nicht verschiebbar",
 
     "disclaimer.accept": "Annehmen",
     "disclaimer.close": "Schließen",

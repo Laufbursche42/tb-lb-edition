@@ -16,6 +16,8 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Telemetry - Laufbursche Edition (Trittbrett)</title>
 <link rel="stylesheet" href="dashboard.css">
+<!-- Active user theme CSS: served by the native WebView (shouldInterceptRequest); empty when no theme is active. -->
+<link id="theme-css-link" rel="stylesheet" href="active-theme.css">
 </head>
 <body>
 <!-- Debug-mode banner: visible only while native debug logging is recording. -->
@@ -327,6 +329,16 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
         <option value="10" data-i18n="settings.gps.interval.option.10s">10 s</option>
         <option value="30" data-i18n="settings.gps.interval.option.30s">30 s</option>
       </select>
+    </div>
+    <div class="settings-row">
+      <div class="settings-row-left">
+        <div class="settings-row-label" data-i18n="settings.ridebanner.dock.label">Pin recording banner</div>
+        <div class="settings-row-sublabel" data-i18n="settings.ridebanner.dock.hint">Keeps banner at fixed position, not draggable</div>
+      </div>
+      <div class="toggle-wrap">
+        <input type="checkbox" class="toggle-input" id="toggle-ride-banner-dock">
+        <label class="toggle-label" for="toggle-ride-banner-dock"></label>
+      </div>
     </div>
     <button id="btn-open-routes" class="mt-10"><span data-i18n="settings.scooter.routes.action">&#128506; Recorded routes</span><span id="routes-count-badge"></span></button>
   </div>
@@ -641,6 +653,38 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
 <!-- Tile colour, page background and text brightness, kept separately for the dark and the light
      theme. The background picker is what OLED riders reach for: set it to pure black and the
      unlit pixels really switch off. -->
+<!-- Theme manager page: list/activate/export/delete imported themes, import a .zip, open the guide. -->
+<div id="theme-page">
+  <div id="topbar">
+    <div class="tb-left">
+      <button class="icon-btn" id="btn-theme-back" aria-label="Back" data-i18n-aria="info.nav.back">&#8592;</button>
+    </div>
+    <span class="tb-title" data-i18n="theme.page.title">Theme manager</span>
+    <div class="tb-right"><span class="tb-spacer"></span></div>
+  </div>
+  <div id="theme-scroller">
+    <p class="settings-row-sublabel" data-i18n="theme.page.hint">Import a .zip bundle to customise the dashboard layout. The zip must contain theme.html and theme.css.</p>
+    <button type="button" id="btn-theme-import" class="settings-btn" data-i18n="theme.import.action">&#8681; Import theme (.zip)</button>
+    <p class="settings-row-sublabel" data-i18n="theme.import.hint">Pick a single .zip file - one zip = one theme.</p>
+    <div id="theme-list"></div>
+    <button type="button" id="btn-open-guide" class="settings-btn settings-btn-secondary" data-i18n="theme.guide.btn">&#128196; Theme creation guide</button>
+  </div>
+</div>
+
+<!-- Theme guide page: the bundled offline authoring guide (theme-guide.html), loaded on first open. -->
+<div id="guide-page">
+  <div id="topbar">
+    <div class="tb-left">
+      <button class="icon-btn" id="btn-guide-back" aria-label="Back" data-i18n-aria="info.nav.back">&#8592;</button>
+    </div>
+    <span class="tb-title" data-i18n="theme.guide.title">Theme Guide</span>
+    <div class="tb-right"><span class="tb-spacer"></span></div>
+  </div>
+  <div id="guide-scroller">
+    <div id="guide-body"></div>
+  </div>
+</div>
+
 <div id="display-page">
   <div id="topbar">
     <div class="tb-left">
@@ -653,6 +697,8 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
     <div class="settings-row-sublabel mb-10" data-i18n="display.hint">
       Colours are stored per theme: what you set here applies to the theme you are editing, the other one keeps its own values.
     </div>
+
+    <button id="btn-open-theme" class="settings-btn mb-10" data-i18n="theme.settings.action">&#127912; Theme manager</button>
 
     <div class="settings-group">
       <div class="settings-group-title" data-i18n="display.dark.title">Dark mode</div>
@@ -1470,6 +1516,7 @@ function tickBLE() {
   const raw = storage.get('lb_live_data');
   const data = parseBLE(raw);
   updateBLEUI(data);
+  try { updateThemeHooks(data); } catch (e) {}
   updateRideUI();
 }
 
@@ -3034,6 +3081,10 @@ function initNavBanner() {
    above the "Motors" heading and can be dragged anywhere; the dragged spot is remembered. */
 
 const RIDE_BANNER_KEY = 'lb_ride_banner_pos';
+const RIDE_BANNER_DOCK_KEY = 'lb_ride_banner_docked';
+function _isRideBannerDocked() {
+  try { return localStorage.getItem(RIDE_BANNER_DOCK_KEY) === 'true'; } catch(e) { return false; }
+}
 
 /* Park it above the "Motors" heading. Only used until the rider drags it somewhere else. */
 function placeRideBannerDefault(b) {
@@ -3054,15 +3105,19 @@ function showRideBanner(on) {
   const was = b.classList.contains('open');
   b.classList.toggle('open', !!on);
   if (on && !was) {
-    let saved = null;
-    try { saved = JSON.parse(localStorage.getItem(RIDE_BANNER_KEY) || 'null'); } catch (e) {}
-    if (saved && typeof saved.left === 'number' && typeof saved.top === 'number') {
-      b.style.left = saved.left + 'px'; b.style.top = saved.top + 'px';
-      b.style.right = 'auto'; b.style.bottom = 'auto';
-      if (typeof saved.width === 'number') b.style.width = saved.width + 'px';
-    } else {
-      // offsetHeight is only real once the element is displayed, so measure after the class flip.
+    if (_isRideBannerDocked()) {
       placeRideBannerDefault(b);
+    } else {
+      let saved = null;
+      try { saved = JSON.parse(localStorage.getItem(RIDE_BANNER_KEY) || 'null'); } catch (e) {}
+      if (saved && typeof saved.left === 'number' && typeof saved.top === 'number') {
+        b.style.left = saved.left + 'px'; b.style.top = saved.top + 'px';
+        b.style.right = 'auto'; b.style.bottom = 'auto';
+        if (typeof saved.width === 'number') b.style.width = saved.width + 'px';
+      } else {
+        // offsetHeight is only real once the element is displayed, so measure after the class flip.
+        placeRideBannerDefault(b);
+      }
     }
   }
 }
@@ -3073,9 +3128,11 @@ function initRideBanner() {
   const stop = document.getElementById('rb-stop');
   if (stop) stop.addEventListener('click', (e) => { e.stopPropagation(); stopLiveRide(); });
 
+  const SNAP = 8;
   let drag = null;
   b.addEventListener('pointerdown', (e) => {
     if (e.target && e.target.id === 'rb-stop') return;
+    if (_isRideBannerDocked()) return;   // docked: fixed at the top, not draggable
     const r = b.getBoundingClientRect();
     b.style.width = r.width + 'px';
     b.style.left = r.left + 'px'; b.style.top = r.top + 'px';
@@ -3086,8 +3143,9 @@ function initRideBanner() {
   b.addEventListener('pointermove', (e) => {
     if (!drag) return;
     const w = b.offsetWidth, h = b.offsetHeight;
-    const left = Math.max(4, Math.min(e.clientX - drag.dx, window.innerWidth - w - 4));
-    const top = Math.max(4, Math.min(e.clientY - drag.dy, window.innerHeight - h - 4));
+    const rawL = e.clientX - drag.dx, rawT = e.clientY - drag.dy;
+    const left = Math.round(Math.max(4, Math.min(rawL, window.innerWidth - w - 4)) / SNAP) * SNAP;
+    const top  = Math.round(Math.max(4, Math.min(rawT, window.innerHeight - h - 4)) / SNAP) * SNAP;
     b.style.left = left + 'px'; b.style.top = top + 'px';
   });
   const drop = () => {
@@ -3100,6 +3158,16 @@ function initRideBanner() {
   };
   b.addEventListener('pointerup', drop);
   b.addEventListener('pointercancel', drop);
+
+  // Dock toggle (Settings > GPS): docked snaps the banner to the top and disables dragging.
+  const rbDockToggle = document.getElementById('toggle-ride-banner-dock');
+  if (rbDockToggle) {
+    try { rbDockToggle.checked = _isRideBannerDocked(); } catch (e) {}
+    rbDockToggle.addEventListener('change', (e) => {
+      try { localStorage.setItem(RIDE_BANNER_DOCK_KEY, e.target.checked ? 'true' : 'false'); } catch (err) {}
+      if (b.classList.contains('open') && e.target.checked) placeRideBannerDefault(b);
+    });
+  }
 }
 
 /* ── Trittbrett scooter settings (ZYD only, generic single-key send) ──
@@ -3732,6 +3800,203 @@ function wireEvents() {
 
 /* ── Initialisation ───────────────────────────────────────── */
 
+/* Theme manager: import HTML+CSS theme pairs (as a .zip), activate, export, delete.
+   An active theme's HTML replaces #fold-inner; its CSS is served as active-theme.css by the
+   native WebView. Live values bind to the theme's data-lb hooks every tick; no script runs from
+   a theme. The style/tile editors from the reference app are intentionally omitted here. */
+let _themeActive = '';   // active theme name, mirrors prefs at page load
+
+function openThemePage() {
+  document.getElementById('theme-page').classList.add('open');
+  renderThemeList();
+}
+function closeThemePage() {
+  document.getElementById('theme-page').classList.remove('open');
+}
+
+var _guideLoaded = false;
+function openGuidePage() {
+  document.getElementById('guide-page').classList.add('open');
+  if (!_guideLoaded) {
+    var body = document.getElementById('guide-body');
+    if (!body) return;
+    var html = '';
+    try { if (typeof LB !== 'undefined' && LB.getAsset) html = LB.getAsset('theme-guide.html'); } catch (e) {}
+    if (html) { body.innerHTML = html; _guideLoaded = true; }
+    else body.textContent = 'Guide not available.';
+  }
+}
+function closeGuidePage() {
+  document.getElementById('guide-page').classList.remove('open');
+}
+
+function renderThemeList() {
+  const list = document.getElementById('theme-list');
+  if (!list) return;
+  let themes = [];
+  try {
+    if (typeof LB !== 'undefined' && LB.listThemes) themes = JSON.parse(LB.listThemes() || '[]');
+  } catch (e) {}
+  list.innerHTML = '';
+  themes.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'theme-row';
+    const left = document.createElement('div');
+    left.className = 'theme-row-left';
+    const namEl = document.createElement('span');
+    namEl.className = 'theme-name';
+    namEl.textContent = item.name;
+    left.appendChild(namEl);
+    if (item.active) {
+      const badge = document.createElement('span');
+      badge.className = 'theme-active-badge';
+      badge.setAttribute('data-i18n', 'theme.badge.active');
+      badge.textContent = t('theme.badge.active');
+      left.appendChild(badge);
+    }
+    row.appendChild(left);
+    const actions = document.createElement('div');
+    actions.className = 'theme-row-actions';
+    if (!item.active) {
+      const btnAct = document.createElement('button');
+      btnAct.textContent = t('theme.action.activate');
+      btnAct.addEventListener('click', () => activateTheme(item.name));
+      actions.appendChild(btnAct);
+    }
+    if (item.name !== 'Default') {
+      const btnExp = document.createElement('button');
+      btnExp.textContent = t('theme.action.export');
+      btnExp.addEventListener('click', () => {
+        if (typeof LB !== 'undefined' && LB.exportTheme) LB.exportTheme(item.name);
+        else showToast(t('msg.app.only.in.app'));
+      });
+      actions.appendChild(btnExp);
+      const btnDel = document.createElement('button');
+      btnDel.textContent = t('theme.action.delete');
+      btnDel.addEventListener('click', () => confirmDeleteTheme(item.name));
+      actions.appendChild(btnDel);
+    }
+    row.appendChild(actions);
+    list.appendChild(row);
+  });
+}
+
+function activateTheme(name) {
+  if (typeof LB === 'undefined' || !LB.activateTheme) { showToast(t('msg.app.only.in.app')); return; }
+  LB.activateTheme(name === 'Default' ? '' : name);
+  // Reload so the native WebView re-serves active-theme.css and re-injects the theme HTML.
+  location.reload();
+}
+
+function confirmDeleteTheme(name) {
+  document.getElementById('confirm-title').textContent = t('theme.action.delete');
+  document.getElementById('confirm-msg').textContent = name;
+  state.confirmCb = () => {
+    if (typeof LB !== 'undefined' && LB.deleteTheme) LB.deleteTheme(name);
+    renderThemeList();
+  };
+  document.getElementById('confirm-ok').textContent = t('theme.action.delete');
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+
+/* Fill the active theme's data-lb hooks from live telemetry. Called every tick.
+   Keys (speed, soc, power, gear, park) match the cross-app theme guide contract. */
+function updateThemeHooks(rawData) {
+  if (!_themeActive || _themeActive === 'Default') return;   // hooks only exist in a custom theme
+  const inner = document.getElementById('fold-inner');
+  if (!inner) return;
+  const d = rawData || {};
+  const h = {
+    speed: (typeof d.speed === 'number') ? convSpeed(d.speed) : '-',
+    soc:   (typeof d.batt === 'number') ? Math.round(d.batt) : '-',
+    power: (typeof d.power === 'number') ? d.power.toFixed(0) : '-',
+    gear:  (d.gear === 1 ? 'T' : (d.gear === 0 ? 'D' : '-')),
+    park:  !!d.lock
+  };
+  inner.querySelectorAll('[data-lb]').forEach(el => {
+    const key = el.getAttribute('data-lb');
+    const val = h[key];
+    if (val !== undefined && val !== null) el.textContent = val;
+  });
+  inner.querySelectorAll('[data-lb-state]').forEach(el => {
+    const spec = el.getAttribute('data-lb-state');
+    const sep = spec.indexOf(':');
+    if (sep < 0) return;
+    const key = spec.substring(0, sep);
+    const cls = spec.substring(sep + 1);
+    el.classList.toggle(cls, !!h[key]);
+  });
+}
+
+/* Re-attach the triple-tap speed-unlock gesture to a theme's [data-lb-action="speed-unlock"]. */
+function reattachSpeedUnlock() {
+  const el = document.querySelector('#fold-inner [data-lb-action="speed-unlock"]');
+  if (el) el.addEventListener('click', bleDrumTripleTap);
+}
+
+/* Inject the active (non-Default) theme's HTML into #fold-inner before the fold is first measured. */
+function initActiveTheme() {
+  if (typeof LB === 'undefined' || !LB.listThemes) return;
+  try {
+    var themes = JSON.parse(LB.listThemes() || '[]');
+    var active = null;
+    for (var i = 0; i < themes.length; i++) {
+      if (themes[i].active) { active = themes[i]; break; }
+    }
+    if (!active) return;
+    _themeActive = active.name;
+    if (active.name !== 'Default' && LB.getThemeHtml) {
+      var html = LB.getThemeHtml(active.name);
+      if (html) {
+        var inner = document.getElementById('fold-inner');
+        if (inner) {
+          inner.innerHTML = html;
+          reattachSpeedUnlock();
+          // Merge any custom i18n strings the theme declared in theme.json before translating.
+          // location.reload() on each theme switch resets window.I18N, so merges never leak.
+          try {
+            if (LB.getThemeMeta && window.I18N) {
+              var themeMeta = JSON.parse(LB.getThemeMeta(active.name) || '{}');
+              if (themeMeta.strings) {
+                if (themeMeta.strings.en && window.I18N.en) Object.assign(window.I18N.en, themeMeta.strings.en);
+                if (themeMeta.strings.de && window.I18N.de) Object.assign(window.I18N.de, themeMeta.strings.de);
+              }
+            }
+          } catch (eStr) {}
+          // Re-run i18n so data-i18n attributes in the injected HTML are translated.
+          try { applyLang(); } catch (eLang) {}
+          try { scheduleFitFold(); } catch (eFit) {}
+        }
+      }
+    }
+  } catch (e) {}
+}
+
+/* Native theme-import result (window.__onThemeEvent). */
+window.__onThemeEvent = function(ev) {
+  if (!ev) return;
+  if (ev.event === 'imported') {
+    renderThemeList();
+    showToast((ev.name || '') + ' imported');
+  } else if (ev.event === 'error') {
+    showToast(ev.message || 'import error', 4000, 'err');
+  }
+};
+
+/* Wire the Theme manager + guide UI (called from init after wireEvents). */
+function initThemeUi() {
+  const byId = (id) => document.getElementById(id);
+  const open = byId('btn-open-theme'); if (open) open.addEventListener('click', openThemePage);
+  const back = byId('btn-theme-back'); if (back) back.addEventListener('click', closeThemePage);
+  const imp = byId('btn-theme-import');
+  if (imp) imp.addEventListener('click', () => {
+    if (typeof LB !== 'undefined' && LB.pickThemeFiles) LB.pickThemeFiles();
+    else showToast(t('msg.app.only.in.app'));
+  });
+  const g = byId('btn-open-guide'); if (g) g.addEventListener('click', openGuidePage);
+  const gb = byId('btn-guide-back'); if (gb) gb.addEventListener('click', closeGuidePage);
+}
+
 function init() {
   // Show the app version (read natively from the package) in the streaming build-info line.
   // The settings footer version now lives in the Version Info & Disclaimer modal.
@@ -3743,6 +4008,7 @@ function init() {
   loadSettings();
   initLang();      // before anything renders, so the first paint is in the rider's language
   wireEvents();
+  initThemeUi();
   loadModelOverride();
   populateModelSelect();
   recoverStuckRides();
@@ -3755,6 +4021,7 @@ function init() {
   initNavBanner();
   initRideBanner();
   initDisplayPage();
+  initActiveTheme();   // inject any custom theme HTML BEFORE initFold so the fold measures real content
   initFold();      // after initLang, so the first measurement sees the rider's own label lengths
 
   // Start BLE polling

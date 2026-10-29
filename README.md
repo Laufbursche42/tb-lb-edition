@@ -62,6 +62,13 @@ Everything below is implemented and shipping in the app.
 - **Vehicle and battery grid** (below the main screen) - the same values plus battery temperature, capacity used/total, Bluetooth signal strength and any active fault codes.
 - **Quick toggles** right below the motor tiles - headlight, ambient lighting, kickstart (zero-start) and turning cruise control off. They are written to the scooter immediately and highlight while active. Gear already has its own hero tile above, so it is not repeated here. Everything else lives in the Scooter Settings sheet (see below).
 
+### Custom themes
+
+- **Bring your own dashboard.** Replace the main fold with your own layout: import a theme as a single `.zip` bundle (`theme.html` + `theme.css`, with an optional `theme.json`) from **Display settings -> Theme manager**, then activate, export or delete it. The built-in layout is always one tap away.
+- **Live data hooks.** A theme binds live telemetry through `data-lb` attributes (`speed`, `soc`, `power`, `gear`), toggles classes with `data-lb-state` (e.g. `park`) and can re-arm the triple-tap speed unlock with `data-lb-action="speed-unlock"`. The format is shared across Laufbursche apps, so a theme `.zip` from another one works here too.
+- **Safe by design.** Imported HTML is sanitised before storage - script tags, iframes, inline event handlers, `javascript:`/`data:` URLs and external resources are stripped, so a theme is structure and CSS only and never runs code.
+- **Built-in guide.** A full bilingual (English / German) authoring guide ships inside the app (no internet needed), reachable from the Theme manager.
+
 ### "All values" telemetry (scroll down on the main screen)
 
 - Shows **every value the app decodes** from the scooter, including the ones that have no tile of their own.
