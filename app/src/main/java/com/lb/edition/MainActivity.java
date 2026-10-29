@@ -102,6 +102,17 @@ public class MainActivity extends Activity {
         // Ride logging: native NDJSON ride recorder, driven from the BLE listener callbacks below.
         rideLogger = new RideLogger(getApplicationContext());
         routeRecorder = new RouteRecorder(getApplicationContext());
+        // Forward native route-recorder errors (e.g. a refused background foreground-service start on
+        // Android 12+) to the dashboard, which shows the rider a clear message.
+        routeRecorder.setListener(code -> {
+            try {
+                org.json.JSONObject o = new org.json.JSONObject();
+                o.put("error", code);
+                runJs("(function(){try{if(window.__onRouteError)window.__onRouteError(" + jsQuote(o.toString()) + ");}catch(e){}})();");
+            } catch (Throwable t) {
+                Log.e(TAG, "route error forward failed", t);
+            }
+        });
 
         // Debug logging: persistent across restarts (SharedPreferences key lb_debug).
         // Resume capture immediately if the user left it enabled.

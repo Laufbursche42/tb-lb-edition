@@ -16,6 +16,15 @@ To hand-write the notes for a release, add a section headed with its version num
 
 If no matching section exists the notes fall back to the commit messages, so keeping this file up to date is optional.
 
+## 1.0.22
+
+Full-screen themes, plus a configurable quick-button row and an optional bottom menu.
+
+- **Full-screen themes.** A theme can now set `"scope": "full"` in its `theme.json` to replace the entire dashboard - the hero section above and the data tiles below - instead of only the fold. Standard fold-only themes are unchanged, and the live `data-lb` hooks and the speed-unlock gesture follow the theme into whichever area it owns.
+- **Configurable quick-button row.** The quick toggles below the motor tiles (headlight, ambient light, kickstart, cruise-off) can now be shown or hidden individually, dragged into any order with a long press and laid out spread, centered or edge to edge. Set it all under Display settings. The row still only appears on scooters that support these toggles.
+- **Optional bottom navigation bar.** Switch the menu from the top-right corner to a bar across the bottom, with the Settings button in the middle and a configurable shortcut on each side (connect, theme manager, routes, streaming, in-app navigation or any quick toggle).
+- **Tile visibility and order (Theme Manager).** Dashboard tiles can now be hidden, shown and dragged into a custom order from the Theme Manager. The setting is per-theme; a long-press on any tile lets you drag it directly on the dashboard.
+
 ## 1.0.21
 
 Custom dashboard themes. You can now replace the whole fold layout with your own design and switch back to the built-in one at any time.

@@ -445,7 +445,7 @@ html, body {
 /* Quick toggles (ZYD only): headlight, ambient, zero-start, cruise-off - four equal flat text
    buttons in one row, same shape as the base app's #drive-quick/#motor-quick. Written
    immediately on tap; the "on" class reflects the live base-param state. */
-#quick-toggles { display: flex; gap: var(--gap); container-type: inline-size; }
+#quick-toggles { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); container-type: inline-size; }
 .qt-btn {
   flex: 1 1 0; min-width: 0; padding: 8px 1px;
   border: 1px solid var(--border); border-radius: var(--radius);
@@ -462,6 +462,25 @@ html, body {
 /* Not connected: whole row greyed and non-interactive-looking, but still clickable so a tap
    shows the "Connect the scooter first" toast instead of doing nothing. */
 #quick-toggles.qt-disabled { opacity: .4; filter: grayscale(1); }
+
+/* Quick-button drag-to-reorder: ghost slots for hidden buttons + drop/drag markers. */
+.qt-btn.btn-drag-active { opacity: .55; outline: 2px dashed var(--btnfill); outline-offset: -2px; }
+.qt-btn.btn-drop-target { box-shadow: 0 0 0 2px var(--btnfill); }
+.qt-btn.btn-ghost-slot { opacity: .2; border: 2px dashed var(--btnfill); background: transparent; }
+.qt-btn.btn-ghost-slot.btn-drop-target { opacity: .55; }
+select.bb-sel { max-width: 55%; }
+
+/* Optional bottom navigation bar: hidden until applyBottomNav() sets display:flex. */
+#bottombar {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
+  background: var(--card); border-top: 1px solid var(--border);
+  align-items: stretch;
+}
+.bb-btn { flex: 1; height: 32px; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+#bb-btn-left, #bb-btn-right { font-size: 11px; font-weight: 600; letter-spacing: .02em; }
+body.bottom-nav-active #scroller { padding-bottom: 32px; }
+body.bottom-nav-active #btn-settings { display: none !important; }
 
 /* LEGACY family: explanatory note where the Speed card would otherwise sit. */
 #legacy-note {
@@ -847,6 +866,36 @@ select.set-ctrl { text-align: left; -webkit-appearance: none; appearance: none; 
 }
 .theme-row-actions { display: flex; gap: 6px; flex-shrink: 0; }
 .theme-row-actions button { padding: 5px 10px; font-size: var(--fs-sm); }
+
+/* ── Theme tile editor + tile drag ── */
+.theme-section-title {
+  font-size: var(--fs-sm); font-weight: 600; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: .08em;
+  padding: 14px 0 6px;
+}
+#tile-editor { padding: 0 0 4px; }
+.tile-editor-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 0; border-bottom: 1px solid var(--border);
+}
+.tile-toggle { width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--btnfill); cursor: pointer; }
+.tile-edit-lbl { flex: 1; font-size: var(--fs-sm); color: var(--text); }
+[data-tile-id].tile-drag-active { opacity: .55; outline: 2px dashed var(--value); outline-offset: -2px; }
+[data-tile-id].tile-drop-target { box-shadow: 0 0 0 2px var(--value); }
+.tile-editor-row.tile-drag-active { opacity: .5; }
+.tile-editor-row.tile-drop-above { border-top: 2px solid var(--value); }
+.tile-editor-row.tile-drop-below { border-bottom: 2px solid var(--value); }
+.tile-drag-handle {
+  font-size: 20px; color: var(--label); padding: 0 6px;
+  touch-action: none; user-select: none; cursor: grab; flex-shrink: 0;
+}
+.theme-hint { font-size: 10px; color: var(--label); font-weight: normal; }
+.tile-editor-reset-btn {
+  float: right; margin-bottom: 6px;
+  font-size: 11px; padding: 3px 8px; border-radius: var(--radius);
+  background: var(--card); border: 1px solid var(--border); color: var(--label);
+  cursor: pointer;
+}
 
 /* ── Theme guide page ── */
 #guide-body {

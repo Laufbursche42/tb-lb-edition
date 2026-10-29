@@ -210,6 +210,32 @@ Optional. If present, it must be valid JSON:
 |-------|-------------|
 | `name` | Display name shown in the app's theme list. Falls back to the ZIP filename if absent. |
 | `version` | Free-form version string, informational only. |
+| `scope` | `"fold"` (default) or `"full"`. How much of the dashboard the theme replaces. See [Theme scope](#theme-scope) below. |
+
+---
+
+## Theme scope  -  fold or full
+
+A theme replaces part of the dashboard with your own HTML. How much it replaces is set by the optional `scope` field in `theme.json`:
+
+| `scope` | Replaces | Container |
+|---------|----------|-----------|
+| `"fold"` (default) | Only the **fold**  -  the one-screen area with the speed drums and the hero tiles. The data grids below stay the built-in ones. | `#fold-inner` |
+| `"full"` | The **entire scrollable dashboard**  -  the fold and every data section below it. | `#scroller` |
+
+A fold theme is scaled to fit one screen like the built-in fold. A full theme owns the whole scrollable area and is not auto-scaled, so you control its layout and scrolling yourself in `theme.css`.
+
+The live value hooks (`data-lb`), state hooks (`data-lb-state`) and the speed-unlock action (`data-lb-action="speed-unlock"`) all work the same in both scopes: the app looks for them inside whichever container your theme owns.
+
+If `scope` is missing, or is any value other than `"full"`, the theme is treated as `"fold"`.
+
+```json
+{
+  "name": "My Theme",
+  "version": "1.0",
+  "scope": "full"
+}
+```
 
 ---
 

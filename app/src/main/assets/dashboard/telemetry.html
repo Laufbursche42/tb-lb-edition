@@ -38,6 +38,14 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
     </div>
   </div>
 
+  <!-- Bottom navigation bar: shown only when bottom-nav mode is enabled in Display settings.
+       Replaces the top-right settings icon with a bottom bar; a shortcut flanks each side. -->
+  <div id="bottombar">
+    <button type="button" class="icon-btn bb-btn" id="bb-btn-left" aria-label="Left shortcut" data-i18n-aria="settings.bottomnav.left.label"></button>
+    <button type="button" class="icon-btn bb-btn" id="bb-btn-settings" aria-label="Settings" data-i18n-aria="dash.topbar.settings" data-i18n="dash.topbar.settings.icon">&#9881;</button>
+    <button type="button" class="icon-btn bb-btn" id="bb-btn-right" aria-label="Right shortcut" data-i18n-aria="settings.bottomnav.right.label"></button>
+  </div>
+
   <!-- ── Scrollable Content ─────────────────────────── -->
   <div id="scroller">
 
@@ -48,7 +56,7 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
      <div id="fold-inner">
 
     <!-- Speed Drums -->
-    <div id="speed-row">
+    <div id="speed-row" data-tile-id="speed" data-tile-label="Speed">
       <div class="speed-drum ble-drum" id="ble-drum" role="button" tabindex="0" aria-label="Triple-tap to unlock or lock the speed limit" data-i18n-aria="dash.speed.ble.tripletap.aria">
         <div class="sd-val" id="ble-speed">-</div>
         <div class="sd-unit" data-i18n="dash.speed.vcu.unit">km/h &middot; VCU</div>
@@ -61,7 +69,7 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
 
     <!-- Hero Metrics (ZYD only: battery %, gear D/T, current). Hidden whole-row on LEGACY, which
          reports only speed (and sometimes volt). -->
-    <div id="hero-row" class="zyd-only">
+    <div id="hero-row" class="zyd-only" data-tile-id="hero" data-tile-label="Hero">
       <div class="hero-cell">
         <div class="hc-val" id="soc-val">-</div>
         <div class="hc-unit" data-i18n="dash.hero.battery.unit">Battery %</div>
@@ -80,6 +88,7 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
          derived value (volt * current) the manufacturer app never displays anywhere - not on the
          dashboard, not in the battery/energy value-cycle buttons - so it lives only in the data-grid
          list below, not as a headline tile (same reasoning as the sf-lb-edition fix for "current"). -->
+    <div data-tile-id="motor" data-tile-label="Motor">
     <div class="section-hdr sub-hdr zyd-only">
       <span data-i18n="dash.motors.section">Motor</span>
     </div>
@@ -114,6 +123,7 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
         </div>
       </div>
     </div>
+    </div><!-- /motor tile wrapper -->
 
     <!-- Quick toggles (ZYD only): headlight, ambient light, zero-start and cruise-off, written
          immediately over BLE via sendSetting - same flat single-row button style as the base
@@ -121,11 +131,11 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
          repeated here. Speed unlock/lock moved to a triple-tap on the km/h · VCU tile above (see
          bleDrumTripleTap) - it needs no permanent screen space and mirrors how the original app's
          speed-lock gesture worked. -->
-    <div id="quick-toggles" class="zyd-only" role="group" aria-label="Quick toggles" data-i18n-aria="dash.quick.group">
-      <button type="button" class="qt-btn" id="qt-headlight" data-key="headlight" data-i18n="dash.quick.headlight">Light</button>
-      <button type="button" class="qt-btn" id="qt-ambient" data-key="ambient" data-i18n="dash.quick.ambient">Ambient</button>
-      <button type="button" class="qt-btn" id="qt-zerostart" data-key="zeroStart" data-i18n="dash.quick.zerostart">Kickstart</button>
-      <button type="button" class="qt-btn" id="qt-cruiseoff" data-key="cruiseOff" data-i18n="dash.quick.cruiseoff">Cruise off</button>
+    <div id="quick-toggles" class="zyd-only" role="group" aria-label="Quick toggles" data-i18n-aria="dash.quick.group" data-tile-id="quick-actions" data-tile-label="Quick Buttons" data-tile-no-editor="true">
+      <button type="button" class="qt-btn" id="qt-headlight" data-key="headlight" data-btn-id="qt-headlight" data-bb-shortcut="qt-headlight" data-bb-label="Light" data-i18n="dash.quick.headlight">Light</button>
+      <button type="button" class="qt-btn" id="qt-ambient" data-key="ambient" data-btn-id="qt-ambient" data-bb-shortcut="qt-ambient" data-bb-label="Ambient" data-i18n="dash.quick.ambient">Ambient</button>
+      <button type="button" class="qt-btn" id="qt-zerostart" data-key="zeroStart" data-btn-id="qt-zerostart" data-bb-shortcut="qt-zerostart" data-bb-label="Kick" data-i18n="dash.quick.zerostart">Kickstart</button>
+      <button type="button" class="qt-btn" id="qt-cruiseoff" data-key="cruiseOff" data-btn-id="qt-cruiseoff" data-bb-shortcut="qt-cruiseoff" data-bb-label="Cruise" data-i18n="dash.quick.cruiseoff">Cruise off</button>
     </div>
 
     <!-- LEGACY family: no BLE speed command exists on this model - explain it where the quick
@@ -139,6 +149,7 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
     <!-- end of fold -->
 
     <!-- Data Grid (ZYD only) -->
+    <div data-tile-id="grid-vehicle" data-tile-label="Vehicle &amp; battery">
     <div class="section-hdr sub-hdr zyd-only" data-i18n="dash.grid.vehicle.section">Vehicle &amp; battery</div>
     <div id="data-grid" class="zyd-only">
       <div class="dg-row">
@@ -171,15 +182,17 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
         <div class="dg-cell"><span class="dg-label" data-i18n="dash.grid.version">Firmware</span><span class="dg-value" id="dg-ver">-</span></div>
       </div>
     </div>
+    </div><!-- /grid-vehicle tile wrapper -->
 
     <!-- LEGACY family: the only extra value it may report is pack voltage. -->
-    <div id="legacy-data-grid" class="legacy-only">
+    <div id="legacy-data-grid" class="legacy-only" data-tile-id="grid-legacy" data-tile-label="Legacy">
       <div class="dg-row one-col">
         <div class="dg-cell"><span class="dg-label" data-i18n="dash.grid.voltage">Voltage</span><span class="dg-value" id="dg-legacy-volt">-</span></div>
       </div>
     </div>
 
     <!-- Current ride (GPS) -->
+    <div data-tile-id="grid-ride" data-tile-label="Current ride">
     <div class="section-hdr sub-hdr" data-i18n="dash.ride.section">Current ride (GPS)</div>
     <div id="data-grid">
       <div class="dg-row">
@@ -201,6 +214,7 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
         <button type="button" id="btn-stop-ride" class="ride-stop-btn" data-i18n="dash.ride.stop">Stop ride</button>
       </div>
     </div>
+    </div><!-- /grid-ride tile wrapper -->
 
     <!-- Bottom Spacer -->
     <div class="icon-16"></div>
@@ -667,6 +681,7 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
     <button type="button" id="btn-theme-import" class="settings-btn" data-i18n="theme.import.action">&#8681; Import theme (.zip)</button>
     <p class="settings-row-sublabel" data-i18n="theme.import.hint">Pick a single .zip file - one zip = one theme.</p>
     <div id="theme-list"></div>
+    <div id="tile-editor" style="display:none"></div>
     <button type="button" id="btn-open-guide" class="settings-btn settings-btn-secondary" data-i18n="theme.guide.btn">&#128196; Theme creation guide</button>
   </div>
 </div>
@@ -699,6 +714,36 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
     </div>
 
     <button id="btn-open-theme" class="settings-btn mb-10" data-i18n="theme.settings.action">&#127912; Theme manager</button>
+
+    <div class="settings-group has-top-rule">
+      <div class="settings-group-title" data-i18n="settings.btnrow.title">Quick buttons</div>
+      <div class="settings-row-sublabel mb-10" data-i18n="settings.btnrow.hint">Choose which quick toggles show on the dashboard and long-press a button to drag it into a new order.</div>
+      <div id="btn-row-editor"></div>
+    </div>
+
+    <div class="settings-group has-top-rule">
+      <div class="settings-group-title" data-i18n="settings.bottomnav.label">Bottom navigation</div>
+      <div class="settings-row">
+        <div class="settings-row-left">
+          <div class="settings-row-label" data-i18n="settings.bottomnav.label">Bottom navigation</div>
+          <div class="settings-row-sublabel" data-i18n="settings.bottomnav.hint">Menu bar at the bottom instead of the top-right settings icon</div>
+        </div>
+        <div class="toggle-wrap">
+          <input type="checkbox" class="toggle-input" id="toggle-bottom-nav">
+          <label class="toggle-label" for="toggle-bottom-nav"></label>
+        </div>
+      </div>
+      <div id="bb-shortcut-rows">
+        <div class="settings-row">
+          <div class="settings-row-label" data-i18n="settings.bottomnav.left.label">Left shortcut</div>
+          <select id="bb-left-sel" class="bb-sel" aria-label="Left shortcut" data-i18n-aria="settings.bottomnav.left.label"></select>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-label" data-i18n="settings.bottomnav.right.label">Right shortcut</div>
+          <select id="bb-right-sel" class="bb-sel" aria-label="Right shortcut" data-i18n-aria="settings.bottomnav.right.label"></select>
+        </div>
+      </div>
+    </div>
 
     <div class="settings-group">
       <div class="settings-group-title" data-i18n="display.dark.title">Dark mode</div>
@@ -1196,10 +1241,611 @@ function refreshDisplayControls() {
 
 function openDisplayPage() {
   refreshDisplayControls();
+  refreshButtonRowUi();
   document.getElementById('display-page').classList.add('open');
 }
 function closeDisplayPage() {
   document.getElementById('display-page').classList.remove('open');
+}
+
+/* ── Quick-button row: show/hide, reorder and lay out the ZYD quick toggles, plus an
+   optional bottom navigation bar. Adapted for tb: the grid IS the existing #quick-toggles
+   row, so model gating (body.is-legacy .zyd-only) stays the only authority on whether the
+   row shows at all - this layer only orders, shows/hides individual buttons and lays them
+   out within what the model already allows. */
+var _BTN_ROW_MAX = 8;
+var _BTN_ROW_DEFAULT = ['qt-headlight', 'qt-ambient', 'qt-zerostart', 'qt-cruiseoff'];
+
+function _getBtnRowConfig() {
+  try {
+    var s = (typeof storage !== 'undefined' ? storage.get('lb_btn_row') : null);
+    if (s) { var a = JSON.parse(s); if (Array.isArray(a)) return a; }
+  } catch (e) {}
+  return _BTN_ROW_DEFAULT.slice();
+}
+
+function applyButtonRowConfig() {
+  var grid = document.getElementById('quick-toggles');
+  if (!grid) return;
+  var cfg = _getBtnRowConfig();
+  var anyVisible = false, visCount = 0;
+  grid.querySelectorAll('[data-btn-id]').forEach(function (b) {
+    var visible = cfg.indexOf(b.dataset.btnId) >= 0;
+    b.style.display = visible ? '' : 'none';
+    if (visible) { anyVisible = true; visCount++; }
+  });
+  // Leave the container to CSS (incl. body.is-legacy .zyd-only) when anything is on; only
+  // force it off when the user has hidden every button.
+  grid.style.display = anyVisible ? '' : 'none';
+  if (!anyVisible) return;
+  var align = '';
+  try { align = (typeof storage !== 'undefined' ? storage.get('lb_btn_row_align') : '') || ''; } catch (e) {}
+  if (align === 'center') {
+    grid.style.gridTemplateColumns = 'repeat(' + visCount + ', minmax(0, auto))';
+    grid.style.justifyContent = 'center';
+  } else if (align === 'edges') {
+    grid.style.gridTemplateColumns = 'repeat(' + visCount + ', minmax(0, auto))';
+    grid.style.justifyContent = 'space-between';
+  } else {
+    grid.style.gridTemplateColumns = 'repeat(' + visCount + ', 1fr)';
+    grid.style.justifyContent = '';
+  }
+}
+
+function renderButtonRowEditor() {
+  var el = document.getElementById('btn-row-editor');
+  if (!el) return;
+  var grid = document.getElementById('quick-toggles');
+  if (!grid) { el.style.display = 'none'; return; }
+  var allBtns = Array.from(grid.querySelectorAll('[data-btn-id]'));
+  if (allBtns.length === 0) { el.style.display = 'none'; return; }
+  el.style.display = '';
+  el.innerHTML = '';
+  var cfg = _getBtnRowConfig();
+
+  allBtns.forEach(function (btn) {
+    var id = btn.dataset.btnId;
+    var label = btn.dataset.bbLabel || btn.textContent.trim();
+    var row = document.createElement('div');
+    row.className = 'settings-row';
+    var lab = document.createElement('div');
+    lab.className = 'settings-row-label';
+    lab.textContent = label;
+    var wrap = document.createElement('div');
+    wrap.className = 'toggle-wrap';
+    var cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.className = 'toggle-input'; cb.id = 'btnrow-cb-' + id;
+    cb.checked = cfg.indexOf(id) >= 0;
+    var tl = document.createElement('label');
+    tl.className = 'toggle-label'; tl.setAttribute('for', cb.id);
+    wrap.appendChild(cb); wrap.appendChild(tl);
+    row.appendChild(lab); row.appendChild(wrap);
+    el.appendChild(row);
+    cb.addEventListener('change', function () {
+      var current = _getBtnRowConfig();
+      if (cb.checked) {
+        if (current.length >= _BTN_ROW_MAX) { cb.checked = false; return; }
+        if (current.indexOf(id) < 0) current.push(id);
+      } else {
+        current = current.filter(function (x) { return x !== id; });
+      }
+      if (typeof storage !== 'undefined') storage.set('lb_btn_row', JSON.stringify(current));
+      applyButtonRowConfig();
+    });
+  });
+
+  // Alignment selector
+  var alignRow = document.createElement('div');
+  alignRow.className = 'settings-row';
+  var alignLab = document.createElement('div');
+  alignLab.className = 'settings-row-label';
+  alignLab.setAttribute('data-i18n', 'settings.btnrow.align.title');
+  alignLab.textContent = t('settings.btnrow.align.title') || 'Alignment';
+  var alignSel = document.createElement('select');
+  alignSel.className = 'bb-sel'; alignSel.id = 'btnrow-align-sel';
+  [['fill', 'settings.btnrow.align.fill'], ['center', 'settings.btnrow.align.center'], ['edges', 'settings.btnrow.align.edges']].forEach(function (opt) {
+    var o = document.createElement('option');
+    o.value = opt[0]; o.setAttribute('data-i18n', opt[1]); o.textContent = t(opt[1]) || opt[0];
+    alignSel.appendChild(o);
+  });
+  var storedAlign = '';
+  try { storedAlign = (typeof storage !== 'undefined' ? storage.get('lb_btn_row_align') : '') || ''; } catch (e) {}
+  alignSel.value = storedAlign || 'fill';
+  alignRow.appendChild(alignLab); alignRow.appendChild(alignSel);
+  el.appendChild(alignRow);
+  alignSel.addEventListener('change', function () {
+    if (typeof storage !== 'undefined') storage.set('lb_btn_row_align', alignSel.value);
+    applyButtonRowConfig();
+  });
+}
+
+/* ── Tile editor (per-theme visibility + drag reorder) ── */
+function renderTileEditor(themeName) {
+  var el = document.getElementById('tile-editor');
+  if (!el) return;
+  var tiles = Array.from(document.querySelectorAll('#scroller [data-tile-id]')).filter(function(t) { return !t.dataset.tileNoEditor; });
+  if (tiles.length === 0) { el.style.display = 'none'; return; }
+  el.style.display = '';
+  var cfg = {};
+  try {
+    if (typeof LB !== 'undefined' && LB.getTileConfig)
+      cfg = JSON.parse(LB.getTileConfig(themeName) || '{}');
+  } catch(e) {}
+  var hidden = cfg.hidden || [];
+  var order  = cfg.order  || tiles.map(function(t) { return t.dataset.tileId; });
+  tiles.forEach(function(t) { if (order.indexOf(t.dataset.tileId) < 0) order.push(t.dataset.tileId); });
+  el.innerHTML = '';
+  var resetBtn = document.createElement('button');
+  resetBtn.type = 'button';
+  resetBtn.className = 'tile-editor-reset-btn';
+  resetBtn.textContent = 'Alle einblenden';
+  resetBtn.addEventListener('click', function() {
+    el.querySelectorAll('.tile-toggle').forEach(function(cb) { cb.checked = true; });
+    _saveTileEditorState(themeName, el, order);
+  });
+  el.appendChild(resetBtn);
+  var foldEl = document.getElementById('fold');
+  var foldMap = {};
+  tiles.forEach(function(t) { if (foldEl && foldEl.contains(t)) foldMap[t.dataset.tileId] = true; });
+  var foldCount = Object.keys(foldMap).length;
+  var hasBothGroups = foldCount > 0 && foldCount < tiles.length;
+  function _addTileRow(id, tile) {
+    var rowLabel = tile.dataset.tileLabel || id;
+    var isHidden = hidden.indexOf(id) >= 0;
+    var row = document.createElement('div');
+    row.className = 'tile-editor-row';
+    row.dataset.id = id;
+    var cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.className = 'tile-toggle'; cb.dataset.id = id;
+    cb.checked = !isHidden;
+    var lbl = document.createElement('span');
+    lbl.className = 'tile-edit-lbl'; lbl.textContent = rowLabel;
+    var handle = document.createElement('span');
+    handle.className = 'tile-drag-handle'; handle.textContent = '≡';
+    handle.setAttribute('aria-label', 'Verschieben');
+    row.appendChild(cb); row.appendChild(lbl); row.appendChild(handle);
+    el.appendChild(row);
+    cb.addEventListener('change', function() { _saveTileEditorState(themeName, el, order); });
+    _initEditorRowDrag(handle, row, el, order, themeName);
+  }
+  if (hasBothGroups) {
+    var hdr1 = document.createElement('div');
+    hdr1.className = 'theme-section-title';
+    hdr1.innerHTML = 'Fold-Kacheln <span class="theme-hint">- im Sichtfeld, lang drücken zum Sortieren</span>';
+    el.appendChild(hdr1);
+    order.forEach(function(id) {
+      var tile = tiles.find(function(t) { return t.dataset.tileId === id; });
+      if (tile && foldMap[id]) _addTileRow(id, tile);
+    });
+    var hdr2 = document.createElement('div');
+    hdr2.className = 'theme-section-title';
+    hdr2.innerHTML = 'Scrollbereich <span class="theme-hint">- nach unten wischen</span>';
+    el.appendChild(hdr2);
+    order.forEach(function(id) {
+      var tile = tiles.find(function(t) { return t.dataset.tileId === id; });
+      if (tile && !foldMap[id]) _addTileRow(id, tile);
+    });
+  } else {
+    var hdr = document.createElement('div');
+    hdr.className = 'theme-section-title';
+    hdr.innerHTML = 'Kacheln <span class="theme-hint">- auf Dashboard lang drücken zum Sortieren</span>';
+    el.appendChild(hdr);
+    order.forEach(function(id) {
+      var tile = tiles.find(function(t) { return t.dataset.tileId === id; });
+      if (tile) _addTileRow(id, tile);
+    });
+  }
+}
+
+function _saveTileEditorState(themeName, el, order) {
+  var hidden = [];
+  el.querySelectorAll('.tile-toggle').forEach(function(cb) {
+    if (!cb.checked) hidden.push(cb.dataset.id);
+  });
+  var cfg = JSON.stringify({ order: order.slice(), hidden: hidden });
+  if (typeof LB !== 'undefined' && LB.saveTileConfig) LB.saveTileConfig(themeName, cfg);
+  applyTileConfig();
+}
+
+/* Drag-to-reorder the quick-toggle buttons (long-press to pick up). */
+var _btnDragEl = null, _btnDragTarget = null, _btnLongTimer = null;
+
+function applyQuickBtnOrder() {
+  var stored;
+  try { stored = JSON.parse((typeof storage !== 'undefined' ? storage.get('lb_btn_order') : null) || 'null'); } catch (e) {}
+  if (!Array.isArray(stored)) return;
+  var grid = document.getElementById('quick-toggles');
+  if (!grid) return;
+  var btns = {};
+  grid.querySelectorAll('[data-btn-id]').forEach(function (b) { btns[b.dataset.btnId] = b; });
+  stored.forEach(function (id) { if (btns[id]) grid.appendChild(btns[id]); });
+}
+
+function initBtnDrag() {
+  var grid = document.getElementById('quick-toggles');
+  if (!grid) return;
+  grid.querySelectorAll('[data-btn-id]').forEach(function (el) {
+    el.removeEventListener('touchstart', _onBtnTouchStart);
+    el.addEventListener('touchstart', _onBtnTouchStart, { passive: true });
+  });
+}
+
+function _onBtnTouchStart(e) {
+  e.stopPropagation();
+  if (_btnDragEl) return;
+  if (_btnLongTimer) { clearTimeout(_btnLongTimer); _btnLongTimer = null; }
+  var el = this;
+  var t0 = e.touches[0];
+  var ox = t0.clientX, oy = t0.clientY;
+  function _cancelBtnLong(e2) {
+    if (e2.type === 'touchmove' && e2.touches && e2.touches[0]) {
+      var t2 = e2.touches[0];
+      if (Math.abs(t2.clientX - ox) < 12 && Math.abs(t2.clientY - oy) < 12) return;
+    }
+    if (_btnLongTimer) { clearTimeout(_btnLongTimer); _btnLongTimer = null; }
+    document.removeEventListener('touchmove', _cancelBtnLong);
+    document.removeEventListener('touchend', _cancelBtnLong);
+    document.removeEventListener('touchcancel', _cancelBtnLong);
+  }
+  _btnLongTimer = setTimeout(function () {
+    _btnLongTimer = null;
+    document.removeEventListener('touchmove', _cancelBtnLong);
+    document.removeEventListener('touchend', _cancelBtnLong);
+    document.removeEventListener('touchcancel', _cancelBtnLong);
+    _beginBtnDrag(el);
+  }, 500);
+  document.addEventListener('touchmove', _cancelBtnLong, { passive: true });
+  document.addEventListener('touchend', _cancelBtnLong, { once: true });
+  document.addEventListener('touchcancel', _cancelBtnLong, { once: true });
+}
+
+function _beginBtnDrag(el) {
+  _btnDragEl = el;
+  el.classList.add('btn-drag-active');
+  var grid = document.getElementById('quick-toggles');
+  if (grid) {
+    var total = 0;
+    grid.querySelectorAll('[data-btn-id]').forEach(function (b) {
+      if (b.style.display === 'none') { b.style.display = ''; b.classList.add('btn-ghost-slot'); }
+      total++;
+    });
+    if (total) { grid.style.gridTemplateColumns = 'repeat(' + total + ', 1fr)'; grid.style.justifyContent = ''; }
+  }
+  document.addEventListener('touchmove', _onBtnDragMove, { passive: false });
+  document.addEventListener('touchend', _onBtnDragEnd, { once: true });
+  document.addEventListener('touchcancel', _onBtnDragEnd, { once: true });
+}
+
+function _onBtnDragMove(e) {
+  if (!_btnDragEl) return;
+  e.preventDefault();
+  var tt = e.touches[0];
+  var tx = tt.clientX, ty = tt.clientY;
+  var under = null;
+  var grid = document.getElementById('quick-toggles');
+  if (!grid) return;
+  grid.querySelectorAll('[data-btn-id]').forEach(function (btn) {
+    if (btn === _btnDragEl) return;
+    var r = btn.getBoundingClientRect();
+    if (tx >= r.left && tx <= r.right && ty >= r.top && ty <= r.bottom) under = btn;
+  });
+  grid.querySelectorAll('.btn-drop-target').forEach(function (s) { s.classList.remove('btn-drop-target'); });
+  if (!under) { _btnDragTarget = null; return; }
+  under.classList.add('btn-drop-target');
+  _btnDragTarget = under;
+}
+
+function _onBtnDragEnd(e) {
+  if (!_btnDragEl) return;
+  var el = _btnDragEl;
+  el.classList.remove('btn-drag-active');
+  document.removeEventListener('touchmove', _onBtnDragMove);
+  document.removeEventListener('touchcancel', _onBtnDragEnd);
+  var grid = document.getElementById('quick-toggles');
+  if (grid) grid.querySelectorAll('.btn-drop-target').forEach(function (s) { s.classList.remove('btn-drop-target'); });
+  var cancelled = e && e.type === 'touchcancel';
+  if (_btnDragTarget && !cancelled) {
+    var parent = el.parentElement;
+    var nodes = Array.from(parent.querySelectorAll(':scope > [data-btn-id]'));
+    var iDrag = nodes.indexOf(el), iTarget = nodes.indexOf(_btnDragTarget);
+    if (iDrag > iTarget) {
+      parent.insertBefore(el, _btnDragTarget);
+    } else {
+      var nxt = _btnDragTarget.nextSibling;
+      nxt ? parent.insertBefore(el, nxt) : parent.appendChild(el);
+    }
+    _saveBtnOrder();
+  }
+  var grid2 = document.getElementById('quick-toggles');
+  if (grid2) {
+    grid2.querySelectorAll('.btn-ghost-slot').forEach(function (b) { b.classList.remove('btn-ghost-slot'); b.style.display = 'none'; });
+    applyButtonRowConfig();
+  }
+  _btnDragEl = null; _btnDragTarget = null;
+}
+
+function _saveBtnOrder() {
+  var grid = document.getElementById('quick-toggles');
+  if (!grid || typeof storage === 'undefined') return;
+  var order = Array.from(grid.querySelectorAll('[data-btn-id]')).map(function (b) { return b.dataset.btnId; });
+  storage.set('lb_btn_order', JSON.stringify(order));
+}
+
+/* ── Tile config (visibility + order, per theme) ── */
+function _isDashLocked() { return false; } // tb has no dashboard-lock toggle
+function applyTileConfig() {
+  var name = _themeActive || 'Default';
+  var cfg = {};
+  try {
+    if (typeof LB !== 'undefined' && LB.getTileConfig)
+      cfg = JSON.parse(LB.getTileConfig(name) || '{}');
+  } catch(e) {}
+  var hidden = cfg.hidden || [];
+  var order  = cfg.order  || [];
+  document.querySelectorAll('#scroller [data-tile-id]').forEach(function(el) {
+    if (el.dataset.tileNoEditor) return;
+    el.style.display = hidden.indexOf(el.dataset.tileId) >= 0 ? 'none' : '';
+  });
+  if (order.length > 0) {
+    var parents = [];
+    document.querySelectorAll('#scroller [data-tile-id]').forEach(function(el) {
+      if (parents.indexOf(el.parentElement) < 0) parents.push(el.parentElement);
+    });
+    parents.forEach(function(parent) {
+      var children = Array.from(parent.querySelectorAll(':scope > [data-tile-id]'));
+      children.sort(function(a, b) {
+        var ai = order.indexOf(a.dataset.tileId);
+        var bi = order.indexOf(b.dataset.tileId);
+        return (ai < 0 ? 999 : ai) - (bi < 0 ? 999 : bi);
+      });
+      children.forEach(function(c) { parent.appendChild(c); });
+    });
+  }
+  initTileDrag();
+  try { scheduleFitFold(); } catch(e2) {}
+}
+
+/* ── Dashboard long-press tile drag ── */
+var _foldDragEl = null, _foldDragTarget = null, _foldLongTimer = null;
+
+function initTileDrag() {
+  document.querySelectorAll('#scroller [data-tile-id]').forEach(function(el) {
+    el.removeEventListener('touchstart', _onFoldTouchStart);
+    el.addEventListener('touchstart', _onFoldTouchStart, { passive: true });
+  });
+}
+
+function _onFoldTouchStart(e) {
+  if (_isDashLocked() || _foldDragEl) return;
+  if (_foldLongTimer) { clearTimeout(_foldLongTimer); _foldLongTimer = null; }
+  var el = this;
+  var t0 = e.touches[0];
+  var ox = t0.clientX, oy = t0.clientY;
+  function _cancelFoldLong(e2) {
+    if (e2.type === 'touchmove' && e2.touches && e2.touches[0]) {
+      var t2 = e2.touches[0];
+      if (Math.abs(t2.clientX - ox) < 12 && Math.abs(t2.clientY - oy) < 12) return;
+    }
+    if (_foldLongTimer) { clearTimeout(_foldLongTimer); _foldLongTimer = null; }
+    document.removeEventListener('touchmove', _cancelFoldLong);
+    document.removeEventListener('touchend', _cancelFoldLong);
+    document.removeEventListener('touchcancel', _cancelFoldLong);
+  }
+  _foldLongTimer = setTimeout(function() {
+    _foldLongTimer = null;
+    document.removeEventListener('touchmove', _cancelFoldLong);
+    document.removeEventListener('touchend', _cancelFoldLong);
+    document.removeEventListener('touchcancel', _cancelFoldLong);
+    _beginFoldDrag(el);
+  }, 500);
+  document.addEventListener('touchmove', _cancelFoldLong, { passive: true });
+  document.addEventListener('touchend', _cancelFoldLong, { once: true });
+  document.addEventListener('touchcancel', _cancelFoldLong, { once: true });
+}
+
+function _beginFoldDrag(el) {
+  _foldDragEl = el;
+  el.classList.add('tile-drag-active');
+  document.addEventListener('touchmove', _onFoldDragMove, { passive: false });
+  document.addEventListener('touchend', _onFoldDragEnd, { once: true });
+  document.addEventListener('touchcancel', _onFoldDragEnd, { once: true });
+}
+
+function _onFoldDragMove(e) {
+  if (!_foldDragEl) return;
+  e.preventDefault();
+  var t = e.touches[0];
+  var tx = t.clientX, ty = t.clientY;
+  var under = null;
+  document.querySelectorAll('#scroller [data-tile-id]').forEach(function(tile) {
+    if (tile === _foldDragEl || tile.dataset.tileNoEditor) return;
+    var r = tile.getBoundingClientRect();
+    if (tx >= r.left && tx <= r.right && ty >= r.top && ty <= r.bottom) under = tile;
+  });
+  document.querySelectorAll('.tile-drop-target').forEach(function(s) { s.classList.remove('tile-drop-target'); });
+  if (!under) { _foldDragTarget = null; return; }
+  under.classList.add('tile-drop-target');
+  _foldDragTarget = under;
+}
+
+function _onFoldDragEnd(e) {
+  if (!_foldDragEl) return;
+  var el = _foldDragEl;
+  el.classList.remove('tile-drag-active');
+  document.removeEventListener('touchmove', _onFoldDragMove);
+  document.removeEventListener('touchcancel', _onFoldDragEnd);
+  document.querySelectorAll('.tile-drop-target').forEach(function(s) { s.classList.remove('tile-drop-target'); });
+  var cancelled = e && e.type === 'touchcancel';
+  if (_foldDragTarget && !cancelled && _foldDragTarget.parentElement === el.parentElement) {
+    var parent = el.parentElement;
+    var nodes = Array.from(parent.querySelectorAll(':scope > [data-tile-id]'));
+    var iDrag = nodes.indexOf(el), iTarget = nodes.indexOf(_foldDragTarget);
+    if (iDrag > iTarget) {
+      parent.insertBefore(el, _foldDragTarget);
+    } else {
+      var nxt = _foldDragTarget.nextSibling;
+      nxt ? parent.insertBefore(el, nxt) : parent.appendChild(el);
+    }
+    _saveTileOrder();
+    var eTheme = (_themeActive && _themeActive !== 'Default') ? _themeActive : 'Default';
+    renderTileEditor(eTheme);
+    try { scheduleFitFold(); } catch(e2) {}
+  }
+  _foldDragEl = null; _foldDragTarget = null;
+}
+
+function _saveTileOrder() {
+  var name = _themeActive || 'Default';
+  var cfg = {};
+  try { if (typeof LB !== 'undefined' && LB.getTileConfig) cfg = JSON.parse(LB.getTileConfig(name) || '{}'); } catch(e) {}
+  cfg.order = Array.from(document.querySelectorAll('#scroller [data-tile-id]')).map(function(t) { return t.dataset.tileId; });
+  if (typeof LB !== 'undefined' && LB.saveTileConfig) LB.saveTileConfig(name, JSON.stringify(cfg));
+}
+
+function _initEditorRowDrag(handle, row, listEl, order, themeName) {
+  var _edTarget = null;
+  handle.addEventListener('touchstart', function(e) {
+    e.stopPropagation();
+    row.classList.add('tile-drag-active');
+    document.addEventListener('touchmove', onEdMove, { passive: false });
+    document.addEventListener('touchend', onEdEnd, { once: true });
+  }, { passive: true });
+  function onEdMove(e) {
+    e.preventDefault();
+    var y = e.touches[0].clientY;
+    var rows = Array.from(listEl.querySelectorAll('.tile-editor-row')).filter(function(r) { return r !== row; });
+    rows.forEach(function(r) { r.classList.remove('tile-drop-above', 'tile-drop-below'); });
+    var best = null, bestDist = Infinity;
+    rows.forEach(function(r) {
+      var rect = r.getBoundingClientRect();
+      var mid = rect.top + rect.height / 2;
+      var d = Math.abs(y - mid);
+      if (d < bestDist) { bestDist = d; best = { el: r, above: y < mid }; }
+    });
+    if (best) best.el.classList.add(best.above ? 'tile-drop-above' : 'tile-drop-below');
+    _edTarget = best;
+  }
+  function onEdEnd() {
+    row.classList.remove('tile-drag-active');
+    document.removeEventListener('touchmove', onEdMove);
+    listEl.querySelectorAll('.tile-drop-above, .tile-drop-below').forEach(function(r) {
+      r.classList.remove('tile-drop-above', 'tile-drop-below');
+    });
+    if (_edTarget) {
+      var id = row.dataset.id;
+      var targetId = _edTarget.el.dataset.id;
+      var i = order.indexOf(id);
+      var ti = order.indexOf(targetId);
+      if (i >= 0 && ti >= 0 && i !== ti) {
+        order.splice(i, 1);
+        var ni = order.indexOf(targetId);
+        _edTarget.above ? order.splice(ni, 0, id) : order.splice(ni + 1, 0, id);
+        _saveTileEditorState(themeName, listEl, order);
+        renderTileEditor(themeName);
+      }
+    }
+    _edTarget = null;
+  }
+}
+
+/* Bottom navigation bar: a fixed Settings button flanked by two configurable shortcuts. */
+var BB_SHORTCUTS = {
+  'none':      { labelKey: 'settings.bottomnav.sc.none' },
+  'connect':   { labelKey: 'settings.bottomnav.sc.connect',   action: function () { openConnectPage(); } },
+  'theme':     { labelKey: 'settings.bottomnav.sc.theme',     action: function () { openThemePage(); } },
+  'routes':    { labelKey: 'settings.bottomnav.sc.routes',    action: function () { renderRoutes(); document.getElementById('routes-page').classList.add('open'); } },
+  'streaming': { labelKey: 'settings.bottomnav.sc.streaming', action: function () { var b = document.getElementById('btn-streaming'); if (b) b.click(); } },
+  'nav':       { labelKey: 'settings.bottomnav.sc.nav',       action: function () { if (window.LB && LB.openNavigation) LB.openNavigation(); else showToast(t('msg.app.only.in.app')); } }
+};
+
+function _bbDashShortcuts() {
+  var result = [];
+  document.querySelectorAll('[data-bb-shortcut]').forEach(function (el) {
+    if (!el.isConnected) return;
+    result.push({ key: el.dataset.bbShortcut, label: el.dataset.bbLabel || el.textContent.trim().substring(0, 8), el: el });
+  });
+  return result;
+}
+
+function applyBottomShortcuts() {
+  var lKey = (typeof storage !== 'undefined' ? storage.get('lb_bb_left') : null) || 'none';
+  var rKey = (typeof storage !== 'undefined' ? storage.get('lb_bb_right') : null) || 'none';
+  var allSc = {};
+  Object.keys(BB_SHORTCUTS).forEach(function (k) { allSc[k] = { label: t(BB_SHORTCUTS[k].labelKey) || k, action: BB_SHORTCUTS[k].action }; });
+  _bbDashShortcuts().forEach(function (d) { allSc[d.key] = { label: d.label, action: function () { d.el.click(); } }; });
+  function wire(btnId, key) {
+    var btn = document.getElementById(btnId);
+    if (!btn) return;
+    var sc = allSc[key] || allSc['none'];
+    var label = (key === 'none') ? '' : (sc.label || '');
+    btn.textContent = label;
+    btn.style.visibility = label ? 'visible' : 'hidden';
+    btn.onclick = (key === 'none') ? null : (sc.action || null);
+  }
+  wire('bb-btn-left', lKey);
+  wire('bb-btn-right', rKey);
+}
+
+function applyBottomNav(enabled) {
+  document.body.classList.toggle('bottom-nav-active', !!enabled);
+  var bb = document.getElementById('bottombar');
+  if (bb) bb.style.display = enabled ? 'flex' : 'none';
+  var rows = document.getElementById('bb-shortcut-rows');
+  if (rows) rows.style.display = enabled ? '' : 'none';
+  if (enabled) applyBottomShortcuts();
+}
+
+function populateBbSelect(selId, storageKey) {
+  var sel = document.getElementById(selId);
+  if (!sel) return;
+  var prev = sel.value || (typeof storage !== 'undefined' ? storage.get(storageKey) : null) || 'none';
+  sel.innerHTML = '';
+  Object.keys(BB_SHORTCUTS).forEach(function (k) {
+    var opt = document.createElement('option');
+    opt.value = k; opt.textContent = t(BB_SHORTCUTS[k].labelKey) || k;
+    sel.appendChild(opt);
+  });
+  var dashBtns = _bbDashShortcuts();
+  if (dashBtns.length > 0) {
+    var sep = document.createElement('option');
+    sep.disabled = true; sep.textContent = '- ' + (t('settings.bottomnav.sc.scooter.group') || 'Scooter') + ' -';
+    sel.appendChild(sep);
+    dashBtns.forEach(function (d) {
+      var opt = document.createElement('option');
+      opt.value = d.key; opt.textContent = d.label;
+      sel.appendChild(opt);
+    });
+  }
+  sel.value = prev; if (!sel.value) sel.value = 'none';
+  if (!sel._bbWired) {
+    sel._bbWired = true;
+    sel.addEventListener('change', function () {
+      if (typeof storage !== 'undefined') storage.set(storageKey, sel.value);
+      applyBottomShortcuts();
+    });
+  }
+}
+
+function initBottomNav() {
+  var bnToggle = document.getElementById('toggle-bottom-nav');
+  var bnEnabled = (typeof storage !== 'undefined' ? storage.get('lb_bottom_nav') : null) === 'true';
+  if (bnToggle) {
+    bnToggle.checked = bnEnabled;
+    bnToggle.addEventListener('change', function (e) {
+      if (typeof storage !== 'undefined') storage.set('lb_bottom_nav', e.target.checked ? 'true' : 'false');
+      applyBottomNav(e.target.checked);
+    });
+  }
+  var bbSettings = document.getElementById('bb-btn-settings');
+  if (bbSettings) bbSettings.addEventListener('click', function () { openSettings(); });
+  applyBottomNav(bnEnabled);
+}
+
+// Refresh the quick-button editor + bottom-nav selects (called when the Display page opens).
+function refreshButtonRowUi() {
+  try { renderButtonRowEditor(); } catch (e) {}
+  try { populateBbSelect('bb-left-sel', 'lb_bb_left'); populateBbSelect('bb-right-sel', 'lb_bb_right'); } catch (e) {}
+  try { applyBottomShortcuts(); } catch (e) {}
 }
 
 /* ── Theme ────────────────────────────────────────────────── */
@@ -2575,6 +3221,15 @@ window.__onBleScan = function(listArg) {
   });
 };
 
+/* Native route-recorder errors: {error}. "fgservice" = the OS refused a background foreground-service
+   start (Android 12+), so auto-start failed and the rider must start recording manually. */
+window.__onRouteError = function(argObj) {
+  let o = argObj;
+  try { if (typeof argObj === 'string') o = JSON.parse(argObj); } catch (e) { o = {}; }
+  o = o || {};
+  if (o.error === 'fgservice') showToast(t('msg.route.autostart.failed'));
+};
+
 /* Native pushes connection state here: {connected, name, address, status}. */
 window.__onBleState = function(stArg) {
   let s = stArg;
@@ -2681,6 +3336,8 @@ function applyModelUi(data) {
   document.body.classList.toggle('model-manual', !!ov);
   const sel = document.getElementById('model-select');
   if (sel && sel.options.length) sel.value = _modelOverride || 'auto';
+  // Re-apply the quick-button layout when the model flips (the ZYD row appears or disappears).
+  try { applyButtonRowConfig(); if (document.body.classList.contains('bottom-nav-active')) applyBottomShortcuts(); } catch (e) {}
 }
 
 function pick(d, keys) {
@@ -3805,6 +4462,7 @@ function wireEvents() {
    native WebView. Live values bind to the theme's data-lb hooks every tick; no script runs from
    a theme. The style/tile editors from the reference app are intentionally omitted here. */
 let _themeActive = '';   // active theme name, mirrors prefs at page load
+var _themeScope = 'fold';  // 'fold' = inject into #fold-inner; 'full' = inject into #scroller (whole dashboard)
 
 function openThemePage() {
   document.getElementById('theme-page').classList.add('open');
@@ -3879,6 +4537,9 @@ function renderThemeList() {
     row.appendChild(actions);
     list.appendChild(row);
   });
+  var activeItem = themes.find(function(i) { return i.active; });
+  var editorTheme = activeItem ? activeItem.name : 'Default';
+  try { renderTileEditor(editorTheme); } catch(e) {}
 }
 
 function activateTheme(name) {
@@ -3903,8 +4564,8 @@ function confirmDeleteTheme(name) {
    Keys (speed, soc, power, gear, park) match the cross-app theme guide contract. */
 function updateThemeHooks(rawData) {
   if (!_themeActive || _themeActive === 'Default') return;   // hooks only exist in a custom theme
-  const inner = document.getElementById('fold-inner');
-  if (!inner) return;
+  const root = document.getElementById(_themeScope === 'full' ? 'scroller' : 'fold-inner');
+  if (!root) return;
   const d = rawData || {};
   const h = {
     speed: (typeof d.speed === 'number') ? convSpeed(d.speed) : '-',
@@ -3913,12 +4574,12 @@ function updateThemeHooks(rawData) {
     gear:  (d.gear === 1 ? 'T' : (d.gear === 0 ? 'D' : '-')),
     park:  !!d.lock
   };
-  inner.querySelectorAll('[data-lb]').forEach(el => {
+  root.querySelectorAll('[data-lb]').forEach(el => {
     const key = el.getAttribute('data-lb');
     const val = h[key];
     if (val !== undefined && val !== null) el.textContent = val;
   });
-  inner.querySelectorAll('[data-lb-state]').forEach(el => {
+  root.querySelectorAll('[data-lb-state]').forEach(el => {
     const spec = el.getAttribute('data-lb-state');
     const sep = spec.indexOf(':');
     if (sep < 0) return;
@@ -3930,7 +4591,8 @@ function updateThemeHooks(rawData) {
 
 /* Re-attach the triple-tap speed-unlock gesture to a theme's [data-lb-action="speed-unlock"]. */
 function reattachSpeedUnlock() {
-  const el = document.querySelector('#fold-inner [data-lb-action="speed-unlock"]');
+  const root = _themeScope === 'full' ? '#scroller' : '#fold-inner';
+  const el = document.querySelector(root + ' [data-lb-action="speed-unlock"]');
   if (el) el.addEventListener('click', bleDrumTripleTap);
 }
 
@@ -3948,21 +4610,23 @@ function initActiveTheme() {
     if (active.name !== 'Default' && LB.getThemeHtml) {
       var html = LB.getThemeHtml(active.name);
       if (html) {
-        var inner = document.getElementById('fold-inner');
-        if (inner) {
-          inner.innerHTML = html;
+        // Read theme meta BEFORE injection: merge custom i18n strings and pick the scope first, so
+        // the injected HTML is translated and placed in the right container from the start.
+        // location.reload() on each theme switch resets window.I18N, so merges never leak.
+        var themeMeta = {};
+        try { if (LB.getThemeMeta) themeMeta = JSON.parse(LB.getThemeMeta(active.name) || '{}'); } catch (eMeta) {}
+        try {
+          if (themeMeta.strings && window.I18N) {
+            if (themeMeta.strings.en && window.I18N.en) Object.assign(window.I18N.en, themeMeta.strings.en);
+            if (themeMeta.strings.de && window.I18N.de) Object.assign(window.I18N.de, themeMeta.strings.de);
+          }
+        } catch (eStr) {}
+        // scope 'full' replaces the whole scrollable dashboard; 'fold' (default) only the fold.
+        _themeScope = themeMeta.scope === 'full' ? 'full' : 'fold';
+        var container = document.getElementById(_themeScope === 'full' ? 'scroller' : 'fold-inner');
+        if (container) {
+          container.innerHTML = html;
           reattachSpeedUnlock();
-          // Merge any custom i18n strings the theme declared in theme.json before translating.
-          // location.reload() on each theme switch resets window.I18N, so merges never leak.
-          try {
-            if (LB.getThemeMeta && window.I18N) {
-              var themeMeta = JSON.parse(LB.getThemeMeta(active.name) || '{}');
-              if (themeMeta.strings) {
-                if (themeMeta.strings.en && window.I18N.en) Object.assign(window.I18N.en, themeMeta.strings.en);
-                if (themeMeta.strings.de && window.I18N.de) Object.assign(window.I18N.de, themeMeta.strings.de);
-              }
-            }
-          } catch (eStr) {}
           // Re-run i18n so data-i18n attributes in the injected HTML are translated.
           try { applyLang(); } catch (eLang) {}
           try { scheduleFitFold(); } catch (eFit) {}
@@ -3970,6 +4634,7 @@ function initActiveTheme() {
       }
     }
   } catch (e) {}
+  if (_themeScope !== 'full') try { applyTileConfig(); } catch(e) {}
 }
 
 /* Native theme-import result (window.__onThemeEvent). */
@@ -4022,6 +4687,10 @@ function init() {
   initRideBanner();
   initDisplayPage();
   initActiveTheme();   // inject any custom theme HTML BEFORE initFold so the fold measures real content
+  applyButtonRowConfig();   // honour saved quick-button show/hide before the fold is measured
+  applyQuickBtnOrder();     // restore the saved quick-button order
+  initBtnDrag();            // long-press drag to reorder the quick buttons
+  initBottomNav();          // optional bottom navigation bar
   initFold();      // after initLang, so the first measurement sees the rider's own label lengths
 
   // Start BLE polling
