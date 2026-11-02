@@ -31,6 +31,7 @@ The dashboard is now driver-rendered and fully customizable, with two built-in g
 - **Pin the recording banner.** The route-recording overlay can be docked to the top of the screen or left free-floating with an 8-pixel snap grid (Settings -> GPS).
 - **Privacy: debug logs are scrubbed.** Personal data (MAC addresses, device names and IDs, your scooter's PIN, tokens and secrets) is removed from debug logs before they are exported or shared - always on, matching the websites. Useful troubleshooting data is kept.
 - **Back button returns one level.** The on-screen back arrows and the Android back button now step back exactly one level (sub-page to Settings, Settings to dashboard) instead of sometimes jumping straight to the dashboard.
+- **More device info + older models.** The info page now shows your Trittbrett's controller and display firmware versions, hardware, bootloader, unique code and controller model, plus the battery serial number. The older "Scooter"-protocol models now also report trip, total distance, battery, temperature and ride time.
 
 ## 1.0.20
 

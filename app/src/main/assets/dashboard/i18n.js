@@ -176,6 +176,7 @@ window.I18N = {
     "tb.risky.confirm.title": "Apply this setting?",
     "tb.risky.confirm.warn": "Risky: this can affect ride safety if set wrong.",
     'whatsnew.points': [
+      "<b>More device info + older models.</b> The info page now shows your Trittbrett\u0027s firmware versions, hardware, bootloader, unique code and battery serial, and the older \u0027Scooter\u0027-protocol units report trip, total distance, battery, temperature and ride time too.",
       "<b>Back button fixed.</b> The back arrows and the Android back button now step back exactly one level - a sub-page returns to Settings, not straight to the dashboard.",
       "<b>Fully customizable dashboard.</b> Every live-value tile is now filled by your Trittbrett's own driver into a shared layout - the app shows exactly what your scooter reports. In the Theme Manager a 'Live tiles' list lets you pick, per theme, which value each tile shows (a dropdown per tile, like the quick buttons).",
       "<b>Carbon &amp; Lambo refreshed.</b> The built-in gauge themes now render your driver's values in their own skin, cap the fold tidily (9 tiles / 8 buttons), and mark 40-100 km/h dark red on the gauge for unlocked scooters that reach those speeds. They auto-update on this release.",
@@ -1227,6 +1228,7 @@ window.I18N = {
     "tb.risky.confirm.title": "Diese Einstellung übernehmen?",
     "tb.risky.confirm.warn": "Riskant: kann die Fahrsicherheit beeinträchtigen, wenn falsch eingestellt.",
     'whatsnew.points': [
+      "<b>Mehr Ger\u00e4te-Infos + \u00e4ltere Modelle.</b> Die Info-Seite zeigt jetzt Firmware-Versionen, Hardware, Bootloader, Unique-Code und Akku-Seriennummer deines Trittbrett, und die \u00e4lteren \u0027Scooter\u0027-Protokoll-Modelle melden jetzt auch Trip, Gesamtstrecke, Akku, Temperatur und Fahrzeit.",
       "<b>Zurück-Taste korrigiert.</b> Die Zurück-Pfeile und die Android-Zurück-Taste gehen jetzt genau eine Ebene zurück - eine Unterseite führt zurück zu den Einstellungen, nicht direkt aufs Dashboard.",
       "<b>Voll anpassbares Dashboard.</b> Jede Live-Wert-Kachel wird jetzt vom Treiber deines Trittbrett in ein geteiltes Layout gefüllt - die App zeigt genau das, was dein Roller meldet. Im Theme-Manager wählst du über eine 'Live-Kacheln'-Liste pro Theme, welchen Wert jede Kachel zeigt (ein Dropdown pro Kachel, wie bei den Buttons).",
       "<b>Carbon &amp; Lambo überarbeitet.</b> Die eingebauten Gauge-Themes rendern jetzt die Treiber-Werte in eigener Optik, deckeln den Fold sauber (9 Kacheln / 8 Buttons) und markieren 40-100 km/h dunkelrot auf dem Tacho für entsperrte Roller, die das erreichen. Sie aktualisieren sich mit diesem Release automatisch.",
