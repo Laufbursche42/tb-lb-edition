@@ -581,16 +581,32 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
         <span class="note-md" id="info-model">-</span>
       </div>
       <div class="settings-row">
-        <div class="settings-row-left"><div class="settings-row-label" data-i18n="info.scooter.fw.proto">Firmware Protocol</div></div>
-        <span class="note-md" id="info-fw-proto">-</span>
+        <div class="settings-row-left"><div class="settings-row-label" data-i18n="info.scooter.fw.firmware">Controller Firmware</div></div>
+        <span class="note-md" id="info-fw-firmware">-</span>
       </div>
       <div class="settings-row">
         <div class="settings-row-left"><div class="settings-row-label" data-i18n="info.scooter.fw.disp">Firmware Display</div></div>
         <span class="note-md" id="info-fw-disp">-</span>
       </div>
       <div class="settings-row">
-        <div class="settings-row-left"><div class="settings-row-label" data-i18n="info.scooter.fw.cpu">Firmware CPU</div></div>
-        <span class="note-md" id="info-fw-cpu">-</span>
+        <div class="settings-row-left"><div class="settings-row-label" data-i18n="info.scooter.fw.hardware">Hardware</div></div>
+        <span class="note-md" id="info-fw-hardware">-</span>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-left"><div class="settings-row-label" data-i18n="info.scooter.fw.boot">Bootloader</div></div>
+        <span class="note-md" id="info-fw-boot">-</span>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-left"><div class="settings-row-label" data-i18n="info.scooter.fw.uniquecode">Unique code</div></div>
+        <span class="note-md" id="info-fw-uniquecode">-</span>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-left"><div class="settings-row-label" data-i18n="info.scooter.fw.escmodel">Controller Model</div></div>
+        <span class="note-md" id="info-fw-escmodel">-</span>
+      </div>
+      <div class="settings-row">
+        <div class="settings-row-left"><div class="settings-row-label" data-i18n="info.scooter.batsn">Battery serial</div></div>
+        <span class="note-md" id="info-batsn">-</span>
       </div>
     </div>
 
@@ -1350,6 +1366,22 @@ function parseBLE(raw) {
         out.m2          = num(d.m2);
         out.m3          = num(d.m3);
       }
+    } else {
+      // LEGACY (FF 55 raw path): the controller streams each value as its own opcode frame. Pass the
+      // ones that arrived through so the existing tiles/pages render them (one temp, never per-motor).
+      if (has('trip'))     out.trip     = num(d.trip);
+      if (has('total'))    out.total    = num(d.total);
+      if (has('batt'))     out.batt     = num(d.batt);
+      if (has('escTemp'))  out.escTemp  = num(d.escTemp);
+      if (has('driveTime')) out.driveTime = num(d.driveTime);
+      if (has('gear'))     out.gear     = (typeof d.gear === 'number') ? d.gear : (parseInt(d.gear) || 0);
+      if (has('lock'))     out.lock     = !!d.lock;
+      if (has('imperial')) out.imperial = !!d.imperial;
+      if (has('boot'))     out.boot     = !!d.boot;
+      if (has('cruise'))   out.cruise   = !!d.cruise;
+      if (has('nominalVoltage')) out.nominalVoltage = num(d.nominalVoltage);
+      if (has('wheelDiameter'))  out.wheelDiameter  = num(d.wheelDiameter);
+      out.faults = Array.isArray(d.faults) ? d.faults : [];
     }
     out._keys = Object.keys(d);
     return out;
@@ -2952,10 +2984,15 @@ function renderInfoPage() {
   const d = liveRaw();
   const dash = v => (v === undefined || v === null || v === '') ? '-' : ('' + v);
   setTxt('info-btname', dash(d.btName));
-  setTxt('info-model',  dash(d.model));
-  setTxt('info-fw-proto', dash(d.fw));
-  setTxt('info-fw-disp',  dash(d.fwDisplay));
-  setTxt('info-fw-cpu',   dash(d.fwCpu));
+  // info-model is the scooter model name, owned by applyModelUi - not overwritten here.
+  // Firmware rows read the REAL FrameParser keys (ESC-info 0x07 strings + Frame B display version).
+  setTxt('info-fw-firmware',   dash(d.fwFirmware));
+  setTxt('info-fw-disp',       dash(d.displayVer));
+  setTxt('info-fw-hardware',   dash(d.fwHardware));
+  setTxt('info-fw-boot',       dash(d.fwBoot));
+  setTxt('info-fw-uniquecode', dash(d.fwUniquecode));
+  setTxt('info-fw-escmodel',   dash(d.fwModel));
+  setTxt('info-batsn',         dash(d.batterySN));
 }
 
 // Copy the Bluetooth advertised name (from live BLE data) to the Android clipboard.
@@ -3206,6 +3243,9 @@ function renderBatteryPage() {
   push(t('msg2.battery.pack.system_voltage'), (typeof d.voltage === 'number') ? d.voltage.toFixed(1) + ' V' : '-');
   push(t('msg2.battery.pack.level'),          (typeof d.battery === 'number') ? dash(d.battery) + ' %' : '-');
   push(t('msg2.battery.pack.current'),        (typeof d.current === 'number') ? d.current.toFixed(1) + ' A' : '-');
+  // Battery serial (CMD_BAT_INFO 0x08). Charge cycles (Frame B buf[16-17]): scale unconfirmed.
+  push(t('msg2.battery.pack.serial'),         dash(d.batterySN));
+  push(t('msg2.battery.pack.charge_cycles'),  (typeof d.batteryCycle === 'number') ? dash(d.batteryCycle) : '-');
   const pack = document.getElementById('bat-pack');
   if (pack) {
     pack.innerHTML = rows.map(r =>
@@ -4801,7 +4841,8 @@ var SF_TELE_CATALOG = [
   { cat:'lock',    cellId:'tele-lock',   valId:'tl-lock',     lb:'lock',    dataKey:'lock',    title:'dash.grid.lock',         unit:'dash.tele.lock.unit', tileId:'tile-tele-lock', tileLabel:'dash.grid.lock', tileEn:'Lock', fmt:function(d){ return d.lock===true?t('dash.grid.lock.on'):d.lock===false?t('dash.grid.lock.off'):'-'; } },
   { cat:'error',   cellId:'tele-faults', valId:'tl-faults',   lb:'faults',  dataKey:'faults',  title:'dash.grid.faults',       unit:'dash.tele.error.unit', tileId:'tile-tele-faults', tileLabel:'dash.grid.faults', tileEn:'Faults', fmt:function(d){ return (d.faults&&d.faults.length)?d.faults.join(', '):t('dash.grid.faults.ok'); } },
   { cat:'rssi',    cellId:'tele-rssi',   valId:'tl-rssi',     lb:'rssi',    dataKey:'rssi',    title:'dash.tele.rssi.title',   unit:'dash.tele.rssi.unit', tileId:'tile-tele-rssi', tileLabel:'dash.tele.rssi.title', tileEn:'Signal', fmt:function(d){ return (d.rssi!=null&&!isNaN(d.rssi)&&d.rssi!==0)?String(Math.round(d.rssi)):'-'; } },
-  { cat:'blink',   cellId:'tele-blink',  valId:'tl-blink',    lb:'blinkLeft', dataKey:'blinkLeft', title:'dash.tele.blink.title', unit:'dash.tele.blink.unit', tileId:'tile-tele-blink', tileLabel:'dash.tele.blink.title', tileEn:'Turn signal', fmt:function(d){ if(d.blinkLeft==null&&d.blinkRight==null)return '-'; var l=!!d.blinkLeft,r=!!d.blinkRight; return l&&r?'◀▶':l?'◀':r?'▶':'-'; } }
+  { cat:'blink',   cellId:'tele-blink',  valId:'tl-blink',    lb:'blinkLeft', dataKey:'blinkLeft', title:'dash.tele.blink.title', unit:'dash.tele.blink.unit', tileId:'tile-tele-blink', tileLabel:'dash.tele.blink.title', tileEn:'Turn signal', fmt:function(d){ if(d.blinkLeft==null&&d.blinkRight==null)return '-'; var l=!!d.blinkLeft,r=!!d.blinkRight; return l&&r?'◀▶':l?'◀':r?'▶':'-'; } },
+  { cat:'drivetime', cellId:'tele-drivetime', valId:'tl-drivetime', lb:'drivetime', dataKey:'driveTime', title:'dash.tele.drivetime.title', unit:'dash.tele.drivetime.unit', tileId:'tile-tele-drivetime', tileLabel:'dash.tele.drivetime.title', tileEn:'Drive time', fmt:function(d){ return isNaN(d.driveTime)?'-':String(Math.round(d.driveTime/60)); } }
 ];
 // Per-theme fold capacity: a theme's CSS sets --lb-fold-tiles (Carbon/Lambo = 9 for the gauge layout);
 // Default falls back to 12 (the 2-3-3-3-3 grid). activateTheme reloads, so the value is live at load.

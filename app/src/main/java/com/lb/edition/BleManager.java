@@ -561,7 +561,8 @@ final class BleManager {
         }, 420);
         main.postDelayed(() -> {
             startZydIdleKeep();
-            enqueueWrite(CommandBuilder.zydReadFrame(0x07, 0, 4));   // ESC-info request
+            enqueueWrite(CommandBuilder.zydReadFrame(0x07, 0, 4));   // ESC-info request (CMD_ESC_INFO)
+            enqueueWrite(CommandBuilder.zydReadFrame(0x08, 0, 4));   // battery-info/SN request (CMD_BAT_INFO)
         }, 620);
     }
 

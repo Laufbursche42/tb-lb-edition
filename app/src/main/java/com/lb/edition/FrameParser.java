@@ -48,8 +48,18 @@ final class FrameParser {
     private final byte[] escInfoBuf = new byte[80];
     private String fwModel = "", fwHardware = "", fwBoot = "", fwFirmware = "", fwUniquecode = "";
 
-    // ── Legacy live model ──
-    private double legacySpeed, legacyVolt;
+    // ── Battery info (head 0x01 cmd 0x08): one 16-byte ASCII serial, streamed in 8-byte chunks ──
+    private final byte[] batInfoBuf = new byte[16];
+    private String batterySN = "";
+
+    // Frame B charge cycle count (buf[16..17], u16BE). Scale UNCONFIRMED pending a live capture.
+    private int batteryCycle = -1;
+
+    // ── Legacy live model (FF 55 raw path; each value is its own streamed opcode frame) ──
+    private double legacySpeed, legacyVolt, legacyTrip = -1, legacyTotal = -1, legacyWheel = -1;
+    private int legacyBatt = -1, legacyTemp = Integer.MIN_VALUE, legacyDriveTime = -1;
+    private int legacyGear = -1, legacyLock = -1, legacyUnit = -1, legacyStart = -1;
+    private int legacyNominalV = -1, legacyCruise = -1, legacySelfCheck = -1;
 
     FrameParser(SettingsState settings) {
         this.settings = settings;
@@ -82,6 +92,7 @@ final class FrameParser {
         } else if (head == 0x01) {
             int cmd = v[1] & 0xFF;
             if (cmd == 0x07 && n >= 6) decodeEscInfo(v);
+            else if (cmd == 0x08 && n >= 6) decodeBatInfo(v);
             // any other head-0x01 command is a plain ack for a register write - nothing to decode
         }
     }
@@ -105,6 +116,7 @@ final class FrameParser {
             faultWord = u16(b, 8);
             capRemaining = u16(b, 14);
             capTotal = u16(b, 12);
+            if (b.length >= 18) batteryCycle = u16(b, 16);   // buf[16..17]; scale unconfirmed
             if (b.length >= 23) displayVer = "V" + u8(b, 20) + "." + u8(b, 21) + "." + u8(b, 22);
             settings.updateFromMonitorB(b);
         }
@@ -125,7 +137,19 @@ final class FrameParser {
         }
     }
 
-    // ── Legacy: head 0xFF, op = t[2], additive checksum over all but the last byte ──
+    /** off = u16BE(b,2); copy b[5..] into the 16-byte accumulator at offset off. Complete at off+8>=16. */
+    private synchronized void decodeBatInfo(byte[] b) {
+        int off = u16(b, 2);
+        for (int i = 0; i < 8 && (5 + i) < b.length && (off + i) < batInfoBuf.length; i++) {
+            batInfoBuf[off + i] = b[5 + i];
+        }
+        if (off + 8 >= 16) batterySN = asciiClean(batInfoBuf, 0, 16);
+    }
+
+    // ── Legacy: head 0xFF, op = t[2], additive checksum over all but the last byte. Each telemetry
+    //    value arrives as its own FF 55 opcode frame; payload = bytes 4..n-2, big-endian unsigned. ──
+
+    private static final int[] NOMINAL_V = {0, 24, 36, 48, 60};   // raw 0x1B payload index -> volts
 
     private synchronized void dispatchLegacy(byte[] v) {
         int n = v.length;
@@ -134,9 +158,40 @@ final class FrameParser {
         for (int i = 0; i < n - 1; i++) sum += (v[i] & 0xFF);
         if ((sum & 0xFF) != (v[n - 1] & 0xFF)) return;
         int op = v[2] & 0xFF;
-        if (op == 0x0A && n > 5) legacySpeed = beValue(v, 4, n - 1) * 0.001;
-        else if (op == 0x0E && n > 5) legacyVolt = beValue(v, 4, n - 1) * 0.001;
-        // op 0x1F (gear echo), 0x17 (lock echo), 0x01 (confirm) resolve their pending ack only.
+        int len = v[3] & 0xFF;
+        long pv = beValue(v, 4, n - 1);             // numeric payload (speed/dist/temp/time/wheel)
+        int pb = (n >= 6) ? (v[4] & 0xFF) : -1;     // first payload byte (enum state frames)
+        switch (op) {
+            case 0x0A: legacySpeed = pv * 0.001; break;                 // km/h
+            case 0x0B: legacyTrip = pv * 0.001; break;                  // trip km
+            case 0x0C: legacyTotal = pv * 0.001; break;                 // total km
+            case 0x0D: legacyBatt = (int) pv; break;                    // %
+            case 0x0E: legacyVolt = pv * 0.001; break;                  // V
+            case 0x11: legacyTemp = (int) pv; break;                    // controller temp degC
+            case 0x22: legacyDriveTime = (int) pv; break;               // s
+            case 0x1F: if (pb == 0x02) legacyGear = 0; else if (pb == 0x03) legacyGear = 1; break;   // D1/D2
+            case 0x17: if (len == 1) { if (pb == 0x01) legacyLock = 0; else if (pb == 0x02) legacyLock = 1; } break;  // unlock/lock (len 5 = code-lock, skip)
+            case 0x18: if (pb == 0x01) legacyUnit = 0; else if (pb == 0x02) legacyUnit = 1; break;   // metric/mile
+            case 0x1A: if (pb == 0x01) legacyStart = 1; else if (pb == 0x02) legacyStart = 0; break; // zero-start / foot-kick
+            case 0x1B: if (pb >= 1 && pb <= 4) legacyNominalV = NOMINAL_V[pb]; break;
+            case 0x1C: if (len == 2) legacyWheel = pv / 10.0; break;    // 50->5.0" 65->6.5" 85->8.5"
+            case 0x1D: if (pb == 0x01) legacyCruise = 1; else if (pb == 0x02) legacyCruise = 0; break;
+            case 0x1E: if (len == 2) legacySelfCheck = (int) pv; break; // u16 error bitfield
+            default: break;   // 0x01 confirm/keep-alive ack and anything else: nothing to decode
+        }
+    }
+
+    private static final int[] SC_BITS = {0x0001, 0x0002, 0x0004, 0x0008, 0x0010, 0x0020};
+    private static final String[] SC_NAMES = {"throttle", "brake", "hall", "hardware", "battery", "lowBattery"};
+
+    private JSONArray legacyFaultList() {
+        JSONArray a = new JSONArray();
+        if (legacySelfCheck > 0) {
+            for (int i = 0; i < SC_BITS.length; i++) {
+                if ((legacySelfCheck & SC_BITS[i]) != 0) a.put(SC_NAMES[i]);
+            }
+        }
+        return a;
     }
 
     private static long beValue(byte[] b, int from, int toExclusive) {
@@ -194,6 +249,19 @@ final class FrameParser {
             if ("LEGACY".equals(family)) {
                 o.put("speed", round1(legacySpeed));
                 if (legacyVolt > 0) o.put("volt", round1(legacyVolt));
+                if (legacyTrip >= 0) o.put("trip", round1(legacyTrip));
+                if (legacyTotal >= 0) o.put("total", round1(legacyTotal));
+                if (legacyBatt >= 0) o.put("batt", legacyBatt);
+                if (legacyTemp != Integer.MIN_VALUE) o.put("escTemp", legacyTemp);
+                if (legacyDriveTime >= 0) o.put("driveTime", legacyDriveTime);
+                if (legacyGear >= 0) o.put("gear", legacyGear);
+                if (legacyLock >= 0) o.put("lock", legacyLock == 1);
+                if (legacyUnit >= 0) o.put("imperial", legacyUnit == 1);
+                if (legacyStart >= 0) o.put("boot", legacyStart == 1);
+                if (legacyCruise >= 0) o.put("cruise", legacyCruise == 1);
+                if (legacyNominalV > 0) o.put("nominalVoltage", legacyNominalV);
+                if (legacyWheel > 0) o.put("wheelDiameter", round1(legacyWheel));
+                if (legacySelfCheck >= 0) o.put("faults", legacyFaultList());
             } else {
                 o.put("speed", round1(speed));
                 o.put("batt", battPct);
@@ -214,6 +282,8 @@ final class FrameParser {
                 if (!fwHardware.isEmpty()) o.put("fwHardware", fwHardware);
                 if (!fwBoot.isEmpty()) o.put("fwBoot", fwBoot);
                 if (!fwUniquecode.isEmpty()) o.put("fwUniquecode", fwUniquecode);
+                if (!batterySN.isEmpty()) o.put("batterySN", batterySN);
+                if (batteryCycle >= 0) o.put("batteryCycle", batteryCycle);
 
                 // Maintained base params (SettingsState.bp), so the settings page can prefill without
                 // ever writing a stale value back - mirrors settingsReady()/received71 on the base app.
