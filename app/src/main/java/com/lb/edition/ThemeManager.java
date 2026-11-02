@@ -229,8 +229,13 @@ class ThemeManager {
                 putZipEntry(zos, "theme.html", readFile(htmlFile));
                 putZipEntry(zos, "theme.css",  readFile(cssFile));
                 try {
-                    String json = new JSONObject().put("name", name).put("version", "1.0").toString();
-                    putZipEntry(zos, "theme.json", json.getBytes(StandardCharsets.UTF_8));
+                    File jsonFile = getThemeFile(name, "json");
+                    byte[] jsonBytes = jsonFile.exists() ? readFile(jsonFile) : null;
+                    if (jsonBytes == null) {
+                        jsonBytes = new JSONObject().put("name", name).put("version", "1.0")
+                                .toString().getBytes(StandardCharsets.UTF_8);
+                    }
+                    putZipEntry(zos, "theme.json", jsonBytes);
                 } catch (Throwable ignored) {}
             }
             return out;

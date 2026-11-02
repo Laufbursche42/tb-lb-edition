@@ -71,7 +71,7 @@ public class StreamService extends Service implements ConnectChecker, ScreenGlEn
      * raw URL is sensitive (SrtCrypto exists to protect it at rest) and DebugLog captures this
      * process's logcat into a shareable file, so it must never be logged verbatim.
      */
-    static String redact(String url) {
+    public static String redact(String url) {
         if (url == null) return "null";
         String s = url;
         int ss = s.indexOf("//");

@@ -4,7 +4,7 @@ Notable changes to Laufbursche Edition (Trittbrett), newest first.
 
 This history starts fresh with the Trittbrett port. The app was forked from a Laufbursche Edition written for a different make of scooter, and none of that release history describes what this app does, so none of it is carried over.
 
-The version series lives in `version.properties`, which both the gradle build and the release workflow read. `versionName` is `<major>.<minor>.<n>` where `n` counts the released versions in this series, so the number rises by one on every release with no manual editing. `versionCode` counts straight through a series change and never goes backwards.
+The version series lives in `version.properties`. `versionName` is `<major>.<minor>.<n>` where `n` is the release count: it advances by exactly one per push/release (bumped by the CI workflow), never by individual commits. `versionCode` never goes backwards.
 
 Release notes are built automatically for each release: if this file has a section whose heading matches the released version it is used verbatim, otherwise the commit subjects since the previous release are listed. Either way a fixed Disclaimer and a "phoning home" note are appended (see `.github/release-footer.md`).
 
@@ -16,24 +16,21 @@ To hand-write the notes for a release, add a section headed with its version num
 
 If no matching section exists the notes fall back to the commit messages, so keeping this file up to date is optional.
 
-## 1.0.22
-
-Full-screen themes, plus a configurable quick-button row and an optional bottom menu.
-
-- **Full-screen themes.** A theme can now set `"scope": "full"` in its `theme.json` to replace the entire dashboard - the hero section above and the data tiles below - instead of only the fold. Standard fold-only themes are unchanged, and the live `data-lb` hooks and the speed-unlock gesture follow the theme into whichever area it owns.
-- **Configurable quick-button row.** The quick toggles below the motor tiles (headlight, ambient light, kickstart, cruise-off) can now be shown or hidden individually, dragged into any order with a long press and laid out spread, centered or edge to edge. Set it all under Display settings. The row still only appears on scooters that support these toggles.
-- **Optional bottom navigation bar.** Switch the menu from the top-right corner to a bar across the bottom, with the Settings button in the middle and a configurable shortcut on each side (connect, theme manager, routes, streaming, in-app navigation or any quick toggle).
-- **Tile visibility and order (Theme Manager).** Dashboard tiles can now be hidden, shown and dragged into a custom order from the Theme Manager. The setting is per-theme; a long-press on any tile lets you drag it directly on the dashboard.
-
 ## 1.0.21
 
-Custom dashboard themes. You can now replace the whole fold layout with your own design and switch back to the built-in one at any time.
+The dashboard is now driver-rendered and fully customizable, with two built-in gauge themes - and the custom theme manager, full-screen themes and bottom navigation from the earlier unreleased work ship together here.
 
-- **Theme Manager (Display settings).** Import a theme as a single `.zip` bundle (`theme.html` + `theme.css` + optional `theme.json`), then activate, export or delete it. The active theme's HTML replaces the fold and its CSS is applied live; the built-in layout is always one tap away.
-- **Live data in themes.** A theme binds live values through `data-lb` hooks (`speed`, `soc`, `power`, `gear`) and `data-lb-state` classes (e.g. `park`), refreshed about twice a second. A `data-lb-action="speed-unlock"` element re-arms the triple-tap speed unlock. The hook set matches the shared Laufbursche theme format, so a `.zip` made for another LB app works here too.
-- **Safe import.** Imported HTML is sanitised before it is stored: script tags, iframes, inline event handlers, `javascript:` and `data:` URLs and external resource URLs are stripped. Theme code never runs - only structure and CSS are kept.
-- **Offline theme guide.** A full bilingual (English / German) authoring guide is one tap away in the Theme Manager: the bundle format, every hook, the security model, translations and a complete worked example. No internet needed.
-- **Pin the recording banner.** The route-recording overlay can now be docked to the top of the screen (fixed, not draggable) or left free-floating with an 8-pixel snap grid. Toggle under Settings -> GPS.
+- **Driver-rendered, customizable dashboard.** Every live-value tile is now filled by your Trittbrett's own driver into a shared layout, so the app shows exactly the values your scooter reports - battery, gear, current, voltage, power, ESC / motor / battery temperature, trip, total, capacity, lock and faults - and hides the rest. Disconnected, the dashboard shows the full set with "-"; on connect it trims to what the connected model reports, and your own layout is remembered.
+- **Pick what shows above the fold.** In the Theme Manager a "Live Values" list (between the fixed speed row and the scroll area) lets you choose, per theme, which value each tile shows - a dropdown per tile, just like the quick buttons - plus a tidy packed grid. Capacity is shown in amp-hours (Ah), and the choices also include connection signal strength and turn-signal status.
+- **Manufacturer-neutral themes, driver-filled.** The quick-control bar and the live tiles are built from the app's own driver into empty skin containers, so the built-in Carbon and Lambo theme `.zip`s are byte-identical across the Laufbursche apps; each app fills them with its own scooter's values.
+- **Two built-in gauge themes.** A carbon-fibre and a Lamborghini-style gauge theme now ship with the app, both driver-filled and tidily capped for the gauge layout (9 tiles / 8 buttons); the speed gauge marks 40-100 km/h dark red for unlocked scooters that reach those speeds.
+- **Theme Manager.** Import a theme as a single `.zip` bundle (`theme.html` + `theme.css` + optional `theme.json`), then activate, export or delete it; a `"scope": "full"` theme replaces the whole dashboard, otherwise only the fold. Live `data-lb` hooks (`speed`, `soc`, `power`, `gear`) and `data-lb-state` classes bind live values, and a `data-lb-action="speed-unlock"` element re-arms the triple-tap unlock. Imported HTML is sanitised before storage - scripts, iframes, inline handlers, `javascript:`/`data:` URLs and external resources are stripped, so theme code never runs. The bundle format is shared across Laufbursche apps.
+- **Configurable quick-button row + bottom navigation.** The quick toggles now cover everything the scooter can switch over Bluetooth - headlight, ambient light, kickstart, cruise-off, unit (km/mi), gear (D/T), lock and speed (eKFV / derestrict) - eight buttons in two rows of four, each reflecting its live on/off state. Show or hide them individually, reorder with a long press and align them; the menu can also move from the top-right corner to a bar across the bottom with the Settings button in the middle and a configurable shortcut on each side. Both appear only where the scooter supports them.
+- **Per-row alignment.** Every dashboard row - tiles and quick buttons - can be aligned (centre by default, or left / right / fill) in the Theme Manager, saved per theme; a part-filled last row centres.
+- **Offline theme guide.** A full bilingual (English / German) authoring guide - bundle format, every hook, the security model, translations and a worked example - is one tap away in the Theme Manager, built from a single Markdown source so the in-app guide and the PDFs always match.
+- **Pin the recording banner.** The route-recording overlay can be docked to the top of the screen or left free-floating with an 8-pixel snap grid (Settings -> GPS).
+- **Privacy: debug logs are scrubbed.** Personal data (MAC addresses, device names and IDs, your scooter's PIN, tokens and secrets) is removed from debug logs before they are exported or shared - always on, matching the websites. Useful troubleshooting data is kept.
+- **Back button returns one level.** The on-screen back arrows and the Android back button now step back exactly one level (sub-page to Settings, Settings to dashboard) instead of sometimes jumping straight to the dashboard.
 
 ## 1.0.20
 

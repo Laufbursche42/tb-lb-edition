@@ -2,6 +2,8 @@
 
 Custom themes let you replace the fold area (the top section of the main dashboard) with your own HTML layout. You supply HTML for the structure and CSS for the look; the app fills your elements with live scooter data automatically, every 500 ms, without any JavaScript on your side.
 
+> 📄 **Formatted PDF:** a typeset version of this guide lives next to it in the repository - [THEME-GUIDE-EN.pdf](THEME-GUIDE-EN.pdf). This Markdown is the single source of truth; the PDF and the in-app HTML guide are generated from it, so they always match this file.
+
 ---
 
 ## Table of contents
@@ -14,9 +16,20 @@ Custom themes let you replace the fold area (the top section of the main dashboa
   - [Action hooks  -  data-lb-action](#action-hooks--data-lb-action)
   - [Tile registration  -  data-tile-id](#tile-registration--data-tile-id)
   - [Available data keys](#available-data-keys)
+- [Live-state signals on `<html>`](#live-state-signals-on-html)
+  - [Throttle-lock state](#throttle-lock-state)
+  - [Display unit](#display-unit)
+- [Circular speed gauge  -  complete technique](#circular-speed-gauge--complete-technique)
+  - [Geometry](#geometry)
+  - [Animating the fill arc with --cur-speed](#animating-the-fill-arc-with---cur-speed)
+  - [Unit label toggle](#unit-label-toggle)
+  - [Inline SVG icons](#inline-svg-icons)
+  - [Complete minimal gauge](#complete-minimal-gauge)
 - [theme.css  -  layout and variables](#themecss--layout-and-variables)
   - [App-provided CSS variables](#app-provided-css-variables)
 - [theme.json  -  metadata](#themejson--metadata)
+  - [CSS variable overrides  -  cssVars](#css-variable-overrides--cssvars)
+    - [Label localization](#label-localization)
 - [Security model  -  no JavaScript](#security-model--no-javascript)
 - [How to import](#how-to-import)
 - [Portability between Laufbursche apps](#portability-between-laufbursche-apps)
@@ -40,9 +53,9 @@ A theme is a **ZIP file** containing exactly three files at the root level of th
 
 | File | Required | Purpose |
 |------|----------|---------|
-| `theme.html` | **Yes** | HTML fragment injected into `#fold-inner` |
+| `theme.html` | **Yes** | HTML injected into the dashboard (see Theme scope below) |
 | `theme.css` | **Yes** | CSS loaded for this theme (scoped to your HTML) |
-| `theme.json` | No | Metadata: display name, version, optional CSS-variable declarations |
+| `theme.json` | No | Metadata: display name, version, scope, optional CSS-variable declarations |
 
 The ZIP filename becomes the import fallback name if `theme.json` has no `name` field.
 
@@ -50,9 +63,65 @@ The ZIP filename becomes the import fallback name if `theme.json` has no `name` 
 
 ---
 
+## Theme scope
+
+The `scope` field in `theme.json` controls how much of the dashboard your theme replaces.
+
+| `scope` value | Injection target | Behavior |
+|---------------|-----------------|----------|
+| `"fold"` (default, or omit the field) | `#fold-inner` | Replaces only the hero section at the top of the screen. The tile grid below (speed tile, stats tiles, etc.) is managed by the built-in tile system and is not affected. |
+| `"full"` | `#scroller` | Replaces the **entire dashboard** - both the hero section and the tile area below the fold. The built-in tile manager (show/hide, reorder, resize) is bypassed; your theme owns the complete layout. |
+
+**fold scope** is best for lightweight reskins: you redesign the top hero area and let the standard tiles handle data display below.
+
+**full scope** is for full dashboard redesigns: your `theme.html` must include both the hero section and any data tiles you want shown. All `data-lb`, `data-lb-state`, and `data-lb-action` hooks work identically in both scopes.
+
+Example `theme.json` for a full-scope theme:
+```json
+{
+  "name": "My Dashboard",
+  "scope": "full",
+  "version": "1.0",
+  "author": "you"
+}
+```
+
+A full-scope `theme.html` should structure its content as sections flowing top-to-bottom, each registered with `data-tile-id` so the tile manager can show, hide and reorder them.
+
+### Full-scope DOM skeleton
+
+There is no required outer wrapper. Sections flow in document order:
+
+```html
+<!-- No outer wrapper needed - sections flow in document order. -->
+
+<!-- Section 1: hero / gauge area (top of screen) -->
+<div data-tile-id="my-hero" data-tile-label="Tacho">
+  <!-- hero content, SVG gauge, etc. -->
+</div>
+
+<!-- Section 2: data tile grid -->
+<div data-tile-id="my-grid" data-tile-label="Daten">
+  <!-- data cells with data-lb keys -->
+</div>
+
+<!-- Section 3: quick-action button row (bottom) -->
+<div data-tile-id="my-buttons" data-tile-label="Buttons">
+  <!-- action buttons with data-lb-action -->
+</div>
+```
+
+Rules for full scope:
+- Each direct child (or any descendant) can carry `data-tile-id`.
+- The tile manager lists each registered section by its `data-tile-label`.
+- Sections without `data-tile-id` are always visible and cannot be managed.
+- The built-in scroll tiles (`#scroller` content) are gone for the duration of the theme; your sections provide all data display.
+
+---
+
 ## theme.html  -  structure and hooks
 
-`theme.html` is a plain HTML fragment  -  **no `<html>`, `<head>` or `<body>` tags**, just the content you want inside `#fold-inner`. The app sanitizes it before storing (see [Security model](#security-model--no-javascript)).
+`theme.html` is a plain HTML fragment  -  **no `<html>`, `<head>` or `<body>` tags**, just the content you want inside `#fold-inner` (fold scope, the default) or `#scroller` (full scope  -  see [Theme scope](#theme-scope)). The app sanitizes it before storing (see [Security model](#security-model--no-javascript)).
 
 ### Live value hooks  -  data-lb
 
@@ -135,6 +204,182 @@ All keys come from the scooter's BLE telemetry, parsed every 500 ms. Raw numbers
 
 ---
 
+## Live-state signals on `<html>`
+
+The app sets classes and CSS variables directly on the `<html>` element so script-free theme CSS can react to live state without needing a `data-lb-state` attribute on a specific element.
+
+### Throttle-lock state
+
+| Signal | Type | Values | When set |
+|--------|------|--------|----------|
+| `lb-unlocked` | class on `<html>` | present / absent | Present when the scooter is de-restricted (unlocked after triple-tap or FIN rename); absent when locked (default) |
+| `--throttle-unlocked` | CSS var on `:root` | `1` / `0` | `1` = unlocked, `0` = locked; useful in `calc()` |
+
+Updated every BLE tick (500 ms). Defaults to absent / `0` at page load.
+
+**CSS usage:**
+
+```css
+/* Scale ring shows full 0-110 range when unlocked */
+.gauge-scale { --scale-max: 40; }
+:root.lb-unlocked .gauge-scale { --scale-max: 110; }
+
+/* Or with the numeric var */
+.gauge-arc {
+  stroke-dasharray: calc(var(--throttle-unlocked) * 220 + 80);
+}
+```
+
+### Display unit
+
+| Signal | Type | Values | When set |
+|--------|------|--------|----------|
+| `lb-mph` | class on `<html>` | present / absent | Present when the user has selected mph; absent for km/h |
+
+Set at startup and whenever the user toggles the unit in settings.
+
+**CSS usage:**
+
+```css
+.speed-unit::after { content: 'km/h'; }
+:root.lb-mph .speed-unit::after { content: 'mph'; }
+```
+
+---
+
+## Circular speed gauge  -  complete technique
+
+A circular speed gauge is the most common full-scope theme element. This section gives you the exact SVG markup and CSS math to build one from scratch.
+
+### Geometry
+
+The gauge uses two stacked `<circle>` SVG elements:
+- **Track ring** - full 270-degree grey background arc.
+- **Fill arc** - shorter arc that grows with `--cur-speed`.
+
+The technique is `stroke-dasharray` / `stroke-dashoffset`:
+
+```
+stroke-dasharray="DRAW GAP"
+```
+
+- `DRAW` = length of the visible segment (SVG user units).
+- `GAP`  = gap that fills the rest of the circle.
+
+For radius 58 in a 160×160 viewBox:
+- Circumference = 2 × π × 58 ≈ 364 px
+- 270° = 75% of 364 ≈ **273 px** (draw)
+- Gap = 364 - 273 = **91 px**
+
+So: `stroke-dasharray="273 91"` draws a 270° arc.
+
+By default the arc starts at 3 o'clock (SVG zero-angle). Rotate 135° around the centre to start at 7 o'clock:
+
+```
+transform="rotate(135 80 80)"
+```
+
+### Animating the fill arc with --cur-speed
+
+Control the fill arc's visible length with `stroke-dashoffset`:
+- `dashoffset = 0`   → full 273 px visible (maximum speed).
+- `dashoffset = 273` → arc fully hidden (zero speed).
+- Formula: `offset = 273 - speed × 273 / maxSpeed`
+
+In CSS, define `--speed-max` on the element and reference `--cur-speed` from `:root`:
+
+```css
+.gauge-arc {
+  --speed-max: 25;   /* eKFV locked: 25 km/h */
+  stroke-dashoffset: calc(273 - var(--cur-speed) * 273 / var(--speed-max));
+  transition: stroke-dashoffset 0.4s ease-out;
+}
+
+/* Extend scale when the scooter is unlocked (lb-unlocked on <html>). */
+:root.lb-unlocked .gauge-arc { --speed-max: 110; }
+```
+
+No JavaScript needed - `--cur-speed` is updated by the app every 500 ms and CSS recalculates automatically.
+
+### Unit label toggle
+
+Use two overlapping `<text>` elements toggled by `opacity`. `display:none` is unreliable on SVG text in Android WebView.
+
+```html
+<text class="g-unit g-unit-kmh" x="80" y="100" text-anchor="middle">km/h</text>
+<text class="g-unit g-unit-mph" x="80" y="100" text-anchor="middle">mph</text>
+```
+
+```css
+.g-unit-kmh { opacity: 1; }
+.g-unit-mph { opacity: 0; }
+:root.lb-mph .g-unit-kmh { opacity: 0; }
+:root.lb-mph .g-unit-mph { opacity: 1; }
+```
+
+### Inline SVG icons
+
+No `url()` or `http://` sources are allowed. Embed SVG directly:
+
+```html
+<svg class="my-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+  <path d="M7 2v11h3v9l7-12h-4l4-8z"/>   <!-- lightning bolt -->
+</svg>
+```
+
+`fill="currentColor"` inherits the CSS `color` property, so tinting is just `color: var(--value)`.
+
+### Complete minimal gauge
+
+```html
+<svg class="g-gauge" viewBox="0 0 160 160" aria-hidden="true">
+  <!-- Track ring: 270° static background arc.
+       rotate(135 80 80) puts the start at 7 o'clock. -->
+  <circle class="g-track"
+    cx="80" cy="80" r="58" fill="none"
+    stroke-dasharray="273 91"
+    transform="rotate(135 80 80)" />
+  <!-- Fill arc: stroke-dashoffset driven by --cur-speed in CSS. -->
+  <circle class="g-arc"
+    cx="80" cy="80" r="58" fill="none"
+    stroke-dasharray="273 91"
+    transform="rotate(135 80 80)" />
+  <text class="g-val" x="80" y="80" text-anchor="middle" dominant-baseline="middle"
+        data-lb="speed">0</text>
+  <text class="g-unit g-unit-kmh" x="80" y="100" text-anchor="middle">km/h</text>
+  <text class="g-unit g-unit-mph" x="80" y="100" text-anchor="middle">mph</text>
+</svg>
+```
+
+```css
+.g-gauge { width: 100%; max-width: 200px; overflow: visible; }
+
+.g-track {
+  stroke: var(--border);
+  stroke-width: 10;
+  stroke-linecap: round;
+}
+
+.g-arc {
+  --speed-max: 25;
+  stroke: var(--value);
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-dashoffset: calc(273 - var(--cur-speed) * 273 / var(--speed-max));
+  transition: stroke-dashoffset 0.4s ease-out;
+}
+:root.lb-unlocked .g-arc { --speed-max: 110; }
+
+.g-val       { font-size: 38px; font-weight: 700; fill: var(--text); font-family: inherit; }
+.g-unit      { font-size: 12px; fill: var(--label); font-family: inherit; }
+.g-unit-kmh  { opacity: 1; }
+.g-unit-mph  { opacity: 0; }
+:root.lb-mph .g-unit-kmh { opacity: 0; }
+:root.lb-mph .g-unit-mph { opacity: 1; }
+```
+
+---
+
 ## theme.css  -  layout and variables
 
 `theme.css` is loaded as a scoped stylesheet after the app's own CSS. Write selectors that target your own class names, or element IDs you defined in `theme.html`.
@@ -145,7 +390,9 @@ You do **not** need to set colours or fonts from scratch. Use the app's CSS vari
 
 These variables are always defined on `:root` by the app:
 
-**Colours**
+**Runtime colour tokens  -  use these in `theme.css`**
+
+These are the mode-resolved tokens. They switch between the dark/light values automatically as the user changes mode. Always use these in selectors and `var()` references in your CSS.
 
 | Variable | Description |
 |----------|-------------|
@@ -153,6 +400,7 @@ These variables are always defined on `:root` by the app:
 | `--bg` | Page background |
 | `--text` | Primary text |
 | `--label` | Secondary / muted text |
+| `--border` | Border / divider colour |
 | `--value` | Accent / highlight colour (user-configurable) |
 | `--ble` | BLE speed indicator colour |
 | `--gps` | GPS speed indicator colour |
@@ -161,9 +409,42 @@ These variables are always defined on `:root` by the app:
 | `--danger` | Error / critical colour |
 | `--unlock` | "Unlocked / entdrosselt" indicator colour |
 | `--btnfill` | Button fill colour |
-| `--border` | Border / divider colour |
 
-**Typography**
+**Per-mode source tokens  -  declare these in `cssVars` to customise the palette**
+
+These are the per-mode values that feed the runtime tokens above. Declare them in `cssVars` in `theme.json` to set your theme's own palette. The Style Editor exposes them grouped by mode.
+
+| Variable | Default (dark) | Default (light) | Description |
+|----------|---------------|----------------|-------------|
+| `--dark-card` | `#111420` |  | Tile background in dark mode |
+| `--dark-bg` | `#0A0C10` |  | Page background in dark mode |
+| `--dark-border` | `#1C2035` |  | Border colour in dark mode |
+| `--dark-text` | `#E4EDF6` |  | Primary text in dark mode |
+| `--dark-label` | `#C6D2E2` |  | Secondary text in dark mode |
+| `--dark-lum` | `90` |  | Brightness 0-100 in dark mode |
+| `--light-card` | | `#ffffff` | Tile background in light mode |
+| `--light-bg` | | `#e8edf5` | Page background in light mode |
+| `--light-border` | | `#CDD5E4` | Border colour in light mode |
+| `--light-text` | | `#0A0D18` | Primary text in light mode |
+| `--light-label` | | `#0A0D18` | Secondary text in light mode |
+| `--light-lum` | | `100` | Brightness 0-100 in light mode |
+
+**Accent colour defaults**
+
+Declare these in `cssVars` to set the theme's default accent palette. Users can override them in the Style Editor.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `--value` | `#BCEB39` | Primary accent / value colour |
+| `--ble` | `#B8F020` | BLE speed indicator |
+| `--gps` | `#3DB8FF` | GPS speed indicator |
+| `--good` | `#1EE89A` | Positive state colour |
+| `--btnfill` | `#B8F020` | Button fill |
+| `--warn` | `#FFAA18` | Warning colour |
+| `--danger` | `#FF5050` | Error / critical colour |
+| `--unlock` | `#FF5050` | Unlocked indicator colour |
+
+**Typography  -  fixed scale, not editable**
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -176,16 +457,60 @@ These variables are always defined on `:root` by the app:
 | `--fw-semibold` | 600 | Semibold weight |
 | `--fw-bold` | 700 | Bold weight |
 
-**Speed-tile font sizes** (user-configurable via Style Editor)
+**Tile element font sizes** (user-configurable via Style Editor; declare in `cssVars` to set theme defaults)
 
-| Variable | Description |
-|----------|-------------|
-| `--sz-speed-val` | Speed number |
-| `--sz-speed-lbl` | Speed label |
-| `--sz-hero-val` | Hero tile value |
-| `--sz-hero-lbl` | Hero tile label |
-| `--sz-m1-mid` | Motor tile 1 value |
-| `--sz-m2-mid` | Motor tile 2 value |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `--sz-speed-val` | 64 px | Speed number |
+| `--sz-speed-lbl` | 14 px | Speed label |
+| `--sz-hero-val` | 38 px | Hero tile value |
+| `--sz-hero-lbl` | 13 px | Hero tile label |
+| `--sz-m1-top` | 12 px | Motor tile 1 title |
+| `--sz-m1-mid` | 32 px | Motor tile 1 value |
+| `--sz-m1-bot` | 12 px | Motor tile 1 unit |
+| `--sz-m2-top` | 12 px | Motor tile 2 title |
+| `--sz-m2-mid` | 32 px | Motor tile 2 value |
+| `--sz-m2-bot` | 12 px | Motor tile 2 unit |
+
+**Tile minimum heights** (user-configurable; `0` = natural content height)
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `--tile-h-speed` | 0 px | Speed tile minimum height |
+| `--tile-h-hero` | 0 px | Hero tile minimum height |
+| `--tile-h-motors` | 0 px | Motor tile minimum height |
+
+**Transparency** (user-configurable via Style Editor; always set for every theme)
+
+The Style Editor shows "Transparenz / Durchsichtigkeit" sliders. **Slider scale: 0 % = fully solid (default), 100 % = fully transparent.** The injected CSS variable is always **opacity** (1.0 = solid, 0.0 = invisible); the app converts internally with `opacity = 1 - slider / 100`.
+
+| Variable | CSS value | Default | Description |
+|----------|-----------|---------|-------------|
+| `--tile-alpha` | 0.0-1.0 | `1.0` | Tile / card opacity. 1.0 = fully opaque, 0.0 = invisible. |
+| `--btn-alpha` | 0.0-1.0 | `1.0` | Button opacity. 1.0 = fully opaque, 0.0 = invisible. |
+| `--gauge-alpha` | 0.0-1.0 | `1.0` | Gauge speed-fill arc opacity. 1.0 = fully opaque, 0.0 = invisible. |
+
+**Usage in `theme.css`:**
+```css
+/* Simple: apply opacity to the whole element (affects text too) */
+[data-tile-id] { opacity: var(--tile-alpha);  }
+.lb-btn        { opacity: var(--btn-alpha);   }
+.gauge-arc     { opacity: var(--gauge-alpha); }
+
+/* Background / fill transparency only (CSS Color Level 4 relative colour syntax,
+   Chromium 111+ / Android WebView 111+): */
+[data-tile-id] { background-color: rgb(from var(--card)    r g b / var(--tile-alpha));  }
+.lb-btn        { background-color: rgb(from var(--btnfill)  r g b / var(--btn-alpha));   }
+.gauge-arc     { fill:             rgb(from var(--value)    r g b / var(--gauge-alpha)); }
+```
+
+> **Gotcha:** `rgb(from color-mix(...) r g b / alpha)` does **not** work on Android WebView - a `color-mix()` origin silently drops the alpha channel. Always use a **flat CSS variable** as the origin (e.g. `var(--card)`, `var(--value)`, `var(--btnfill)`), never a `color-mix()` result. This applies to all three alpha vars.
+
+**Live telemetry**
+
+| Variable | Unit | Description |
+|----------|------|-------------|
+| `--cur-speed` | km/h (always) | Current speed, raw km/h regardless of the display-unit setting. Updated every BLE tick (500 ms). Use for gauge arc fill / animation; convert to mph with `calc(var(--cur-speed) * 0.621371)`. |
 
 **Shape**
 
@@ -210,32 +535,66 @@ Optional. If present, it must be valid JSON:
 |-------|-------------|
 | `name` | Display name shown in the app's theme list. Falls back to the ZIP filename if absent. |
 | `version` | Free-form version string, informational only. |
-| `scope` | `"fold"` (default) or `"full"`. How much of the dashboard the theme replaces. See [Theme scope](#theme-scope) below. |
+| `scope` | `"fold"` (default) or `"full"`. How much of the dashboard the theme replaces. See [Theme scope](#theme-scope). |
+| `cssVars` | Object of CSS variable overrides. These become the theme's default palette and are shown in the Style Editor. See section below. |
+| `strings` | Translation table for custom i18n keys. See [Translations and language](#translations-and-language). |
 
 ---
 
-## Theme scope  -  fold or full
+## CSS variable overrides  -  cssVars
 
-A theme replaces part of the dashboard with your own HTML. How much it replaces is set by the optional `scope` field in `theme.json`:
+Declare `cssVars` in `theme.json` to set your theme's default colour / size palette. The values load into the Style Editor as the starting point before any user override. Merge order: **user-saved override > theme `cssVars` default > app built-in default.**
 
-| `scope` | Replaces | Container |
-|---------|----------|-----------|
-| `"fold"` (default) | Only the **fold**  -  the one-screen area with the speed drums and the hero tiles. The data grids below stay the built-in ones. | `#fold-inner` |
-| `"full"` | The **entire scrollable dashboard**  -  the fold and every data section below it. | `#scroller` |
+Two formats are accepted:
 
-A fold theme is scaled to fit one screen like the built-in fold. A full theme owns the whole scrollable area and is not auto-scaled, so you control its layout and scrolling yourself in `theme.css`.
-
-The live value hooks (`data-lb`), state hooks (`data-lb-state`) and the speed-unlock action (`data-lb-action="speed-unlock"`) all work the same in both scopes: the app looks for them inside whichever container your theme owns.
-
-If `scope` is missing, or is any value other than `"full"`, the theme is treated as `"fold"`.
-
+**Flat string** (minimal  -  value only):
 ```json
 {
   "name": "My Theme",
-  "version": "1.0",
-  "scope": "full"
+  "cssVars": {
+    "--value": "#F4B223",
+    "--dark-card": "#1A1500",
+    "--dark-bg": "#0D0F00"
+  }
 }
 ```
+
+**Object format** (preferred  -  shown in Style Editor with labels and sections):
+```json
+{
+  "name": "My Theme",
+  "cssVars": {
+    "--value":      { "default": "#F4B223", "label": "Accent",      "group": "accents" },
+    "--dark-card":  { "default": "#1A1500", "label": "Kachel-HG",   "group": "dark"    },
+    "--dark-bg":    { "default": "#0D0F00", "label": "Hintergrund", "group": "dark"    },
+    "--light-card": { "default": "#FFF8E0", "label": "Kachel-HG",   "group": "light"   },
+    "--light-bg":   { "default": "#F5EFD0", "label": "Hintergrund", "group": "light"   }
+  }
+}
+```
+
+Valid `group` values that map to Style Editor sections: `"dark"`, `"light"`, `"accents"`, `"fonts"`, `"tiles"`. Any variable you list in `cssVars` can be further overridden by the user in the Style Editor. Declare your full custom palette in `cssVars` to expose it for user tweaking.
+
+### Label localization
+
+The `label` field in a `cssVars` entry accepts three formats:
+
+**1. i18n key string** - resolved via the app's built-in translation catalog. Use this for any variable whose name matches an app standard token (e.g. `--warn`, `--dark-lum`). The app already supplies EN + DE for these:
+```json
+"--warn": { "default": "#FFB020", "label": "style.var.warn", "group": "accents" }
+```
+
+**2. Bilingual object** - supply both `en` and `de` yourself. Use this for theme-specific names that don't exist in the app catalog:
+```json
+"--value": { "default": "#22CCFF", "label": { "en": "Accent (arc)", "de": "Akzent (Bogen)" }, "group": "accents" }
+```
+
+**3. Plain string** - shown as-is in both languages. Acceptable for purely decorative or brand names that have no translation:
+```json
+"--value": { "default": "#22CCFF", "label": "Arc accent", "group": "accents" }
+```
+
+The fallback chain is: `{en, de}` object → key lookup → plain string. A missing `de` key falls back to `en`.
 
 ---
 
@@ -369,128 +728,236 @@ Then in `theme.html`:
 
 ---
 
-## Complete minimal example
+## Complete example  -  Orbit (full-scope teaching theme)
+
+Orbit is a complete, importable theme that demonstrates every technique in this guide: a circular SVG speed gauge, `lb-unlocked` scale extension, `lb-mph` unit toggle, all three transparency vars wired, a data grid, a button with an inline SVG icon, and a park state indicator. Save the three files below, zip them to `Orbit.zip`, and import directly.
 
 ### theme.json
+
 ```json
 {
-  "name": "Minimal",
-  "version": "1.0"
+  "name": "Orbit",
+  "version": "1.0",
+  "scope": "full",
+  "cssVars": {
+    "--value":     "#BCEB39",
+    "--btnfill":   "#BCEB39",
+    "--dark-card": "#111420",
+    "--dark-bg":   "#0A0C10"
+  }
 }
 ```
 
 ### theme.html
+
 ```html
-<div class="mn-wrap" data-tile-id="mn-main" data-tile-label="Dashboard">
-  <div class="mn-speed-row">
-    <span class="mn-speed-val" data-lb="speed" data-lb-action="speed-unlock">-</span>
-    <span class="mn-speed-unit">km/h</span>
+<!-- ORBIT - scope:"full" replaces #scroller (entire dashboard scroll area).
+     Three data-tile-id sections let the user show/hide/reorder each block.
+     All class names are prefixed ot- to avoid collisions with app styles. -->
+
+<!-- HERO: speed gauge + SOC row.
+     opacity: var(--tile-alpha) in theme.css wires the Kachel-Transparenz slider. -->
+<div class="ot-hero" data-tile-id="ot-hero" data-tile-label="Tacho">
+
+  <!-- Inline SVG gauge - no external images or fonts.
+       viewBox "0 0 160 160"; CSS sets rendered size.
+       Circumference at r=58: ~364 px. 270° arc = 273 px; gap = 91 px.
+       rotate(135 80 80): start at 7 o'clock instead of 3 o'clock. -->
+  <svg class="ot-gauge" viewBox="0 0 160 160" aria-hidden="true">
+
+    <!-- Track ring: static 270° grey background arc. -->
+    <circle class="ot-track"
+      cx="80" cy="80" r="58" fill="none"
+      stroke-dasharray="273 91"
+      transform="rotate(135 80 80)" />
+
+    <!-- Fill arc: stroke-dashoffset calculated in CSS from --cur-speed.
+         --gauge-alpha wires the Tacho-Transparenz slider (see theme.css). -->
+    <circle class="ot-arc"
+      cx="80" cy="80" r="58" fill="none"
+      stroke-dasharray="273 91"
+      transform="rotate(135 80 80)" />
+
+    <!-- data-lb="speed" wires the live km/h value; app sets textContent every 500 ms. -->
+    <text class="ot-speed-val" x="80" y="76" text-anchor="middle"
+          data-lb="speed">-</text>
+
+    <!-- Unit labels: two overlapping <text> elements toggled by CSS opacity.
+         display:none is unreliable on SVG text in Android WebView. -->
+    <text class="ot-unit ot-unit-kmh" x="80" y="97" text-anchor="middle">km/h</text>
+    <text class="ot-unit ot-unit-mph" x="80" y="97" text-anchor="middle">mph</text>
+
+    <!-- Lock badge: same opacity toggle technique. -->
+    <text class="ot-badge ot-badge-locked"   x="80" y="126" text-anchor="middle">LOCKED</text>
+    <text class="ot-badge ot-badge-unlocked" x="80" y="126" text-anchor="middle">UNLOCKED</text>
+  </svg>
+
+  <!-- SOC row. data-lb-state adds ot-park-on when scooter is parked. -->
+  <div class="ot-soc-row">
+    <span class="ot-soc-val" data-lb="soc">-</span><span class="ot-soc-unit">%</span>
+    <span class="ot-park" data-lb-state="park:ot-park-on">P</span>
   </div>
-  <div class="mn-row">
-    <div class="mn-cell">
-      <span class="mn-lbl">SOC</span>
-      <span class="mn-val" data-lb="soc">-</span>
-      <span class="mn-unit">%</span>
-    </div>
-    <div class="mn-cell">
-      <span class="mn-lbl">Gang</span>
-      <span class="mn-val" data-lb="gear">-</span>
-    </div>
-    <div class="mn-cell">
-      <span class="mn-lbl">Spannung</span>
-      <span class="mn-val" data-lb="volt">-</span>
-      <span class="mn-unit">V</span>
-    </div>
+</div>
+
+<!-- DATA GRID -->
+<div class="ot-grid" data-tile-id="ot-grid" data-tile-label="Daten">
+  <div class="ot-cell">
+    <span class="ot-lbl">Volt</span>
+    <span class="ot-val" data-lb="volt">-</span>
+    <span class="ot-usm">V</span>
   </div>
-  <div class="mn-row">
-    <div class="mn-cell" data-lb-state="park:mn-parked">
-      <span class="mn-lbl">Hinten °C</span>
-      <span class="mn-val" data-lb="rTemp">-</span>
-    </div>
-    <div class="mn-cell">
-      <span class="mn-lbl">Vorne °C</span>
-      <span class="mn-val" data-lb="fTemp">-</span>
-    </div>
-    <div class="mn-cell">
-      <span class="mn-lbl">Power</span>
-      <span class="mn-val" data-lb="power">-</span>
-      <span class="mn-unit">kW</span>
-    </div>
+  <div class="ot-cell">
+    <span class="ot-lbl">Strom</span>
+    <span class="ot-val" data-lb="current">-</span>
+    <span class="ot-usm">A</span>
+  </div>
+  <div class="ot-cell">
+    <span class="ot-lbl">Gang</span>
+    <span class="ot-val" data-lb="gear">-</span>
+  </div>
+  <div class="ot-cell">
+    <span class="ot-lbl">Trip</span>
+    <span class="ot-val" data-lb="singleMile">-</span>
+    <span class="ot-usm">km</span>
+  </div>
+</div>
+
+<!-- BUTTON ROW.
+     data-lb-action="speed-unlock" wires the built-in triple-tap unlock.
+     Icon uses fill="currentColor" to inherit the CSS color property. -->
+<div class="ot-buttons" data-tile-id="ot-buttons" data-tile-label="Buttons">
+  <div class="ot-btn" data-lb-action="speed-unlock">
+    <svg class="ot-btn-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M7 2v11h3v9l7-12h-4l4-8z"/>
+    </svg>
+    <span class="ot-btn-lbl">Unlock</span>
   </div>
 </div>
 ```
 
 ### theme.css
+
 ```css
-.mn-wrap {
-  padding: 12px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background: var(--card);
-  border-radius: var(--radius);
-}
+/* === ORBIT  -  ot- prefix keeps all names unique to this theme === */
 
-.mn-speed-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 6px;
-}
-.mn-speed-val {
-  font-size: 64px;
-  font-weight: var(--fw-bold);
-  color: var(--value);
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-.mn-speed-unit {
-  font-size: var(--fs-md);
-  color: var(--label);
-}
-
-.mn-row {
-  display: flex;
-  gap: 8px;
-}
-.mn-cell {
-  flex: 1;
-  background: var(--bg);
-  border-radius: 8px;
-  padding: 8px;
+/* --- HERO ----------------------------------------------------------
+   opacity: var(--tile-alpha) wires the "Kachel-Transparenz" slider.
+   --tile-alpha is a 0-1 float (1 = fully opaque). */
+.ot-hero {
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding: 16px 12px 8px;
+  background: var(--card);
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  opacity: var(--tile-alpha);
 }
-.mn-cell.mn-parked {
-  border: 1px solid var(--warn);
+
+/* Gauge SVG: fills container up to 200 px.
+   overflow:visible lets the stroke paint outside the viewBox edge. */
+.ot-gauge { width: 100%; max-width: 200px; overflow: visible; }
+
+/* Track ring: static background arc. */
+.ot-track {
+  stroke: var(--border);
+  stroke-width: 10;
+  stroke-linecap: round;
 }
-.mn-lbl {
-  font-size: var(--fs-xs);
-  color: var(--label);
+
+/* Fill arc: driven by --cur-speed.
+   --speed-max: 25 = eKFV limit; extends to 110 when lb-unlocked.
+   stroke-dashoffset = 273 (arc hidden) at speed 0,
+                     = 0   (full arc) at speed == --speed-max.
+   --gauge-alpha wires the "Tacho-Transparenz" slider. */
+.ot-arc {
+  --speed-max: 25;
+  stroke: rgb(from var(--value) r g b / var(--gauge-alpha));
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-dashoffset: calc(273 - var(--cur-speed) * 273 / var(--speed-max));
+  transition: stroke-dashoffset 0.4s ease-out;
 }
-.mn-val {
-  font-size: 24px;
-  font-weight: var(--fw-bold);
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
+:root.lb-unlocked .ot-arc { --speed-max: 110; }
+
+.ot-speed-val { font-size: 38px; font-weight: var(--fw-bold); fill: var(--text); font-family: inherit; }
+
+/* Unit labels: opacity toggle - display:none is unreliable on SVG text
+   in Android WebView. */
+.ot-unit       { font-size: 12px; fill: var(--label); font-family: inherit; }
+.ot-unit-kmh   { opacity: 1; }
+.ot-unit-mph   { opacity: 0; }
+:root.lb-mph .ot-unit-kmh { opacity: 0; }
+:root.lb-mph .ot-unit-mph { opacity: 1; }
+
+/* Lock/unlock badge: same opacity technique. */
+.ot-badge            { font-size: 9px; letter-spacing: 0.08em; font-family: inherit; }
+.ot-badge-locked     { fill: var(--warn);   opacity: 1; }
+.ot-badge-unlocked   { fill: var(--value);  opacity: 0; }
+:root.lb-unlocked .ot-badge-locked   { opacity: 0; }
+:root.lb-unlocked .ot-badge-unlocked { opacity: 1; }
+
+.ot-soc-row  { display: flex; align-items: baseline; gap: 4px; margin-top: 6px; }
+.ot-soc-val  { font-size: 22px; font-weight: var(--fw-bold); color: var(--value); }
+.ot-soc-unit { font-size: var(--fs-sm); color: var(--label); }
+
+/* Park badge: hidden until ot-park-on is set by data-lb-state. */
+.ot-park          { display: none; font-size: var(--fs-xs); color: var(--warn); font-weight: var(--fw-bold); }
+.ot-park.ot-park-on { display: inline; }
+
+/* --- DATA GRID ---------------------------------------------------
+   opacity: var(--tile-alpha) shares the Kachel-Transparenz slider. */
+.ot-grid {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+  opacity: var(--tile-alpha);
 }
-.mn-unit {
-  font-size: var(--fs-xs);
-  color: var(--label);
+.ot-cell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 4px;
+  background: var(--card);
+  border-radius: var(--radius);
 }
+.ot-lbl { font-size: var(--fs-xs); color: var(--label); }
+.ot-val { font-size: 20px; font-weight: var(--fw-bold); color: var(--text); }
+.ot-usm { font-size: var(--fs-xs); color: var(--label); }
+
+/* --- BUTTON ROW -------------------------------------------------
+   opacity: var(--btn-alpha) wires the "Button-Transparenz" slider. */
+.ot-buttons { display: flex; gap: 8px; padding-bottom: 4px; }
+.ot-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px 8px;
+  background: var(--btnfill);
+  border-radius: var(--radius);
+  cursor: pointer;
+  opacity: var(--btn-alpha);
+}
+/* fill="currentColor" on the SVG picks up this color. */
+.ot-btn-icon { width: 24px; height: 24px; color: var(--bg); }
+.ot-btn-lbl  { font-size: var(--fs-xs); font-weight: var(--fw-bold); color: var(--bg); }
 ```
 
 ---
 
 ## Tips and limitations
 
-- **`innerHTML` injection.** Your HTML replaces the entire content of `#fold-inner`. The app re-injects it on every theme activation and page reload. Do not reference IDs from the default layout (like `#speed-row`)  -  they will not exist.
+- **`innerHTML` injection.** Your HTML replaces the entire content of `#fold-inner` (fold scope) or `#scroller` (full scope). The app re-injects it on every theme activation and page reload. Do not reference IDs from the default layout (like `#speed-row`)  -  they will not exist.
 - **No external images.** `http://` and `https://` URLs are stripped from `src` attributes. Use CSS `background-color` and SVG shapes for icons and graphics.
 - **No custom fonts from the web.** Stick to the system font stack or inline a base64 font-face (keep file size in mind  -  2 MB limit).
-- **The scroll area is unchanged.** Your theme only covers `#fold-inner`. The tiles below it (grid-vehicle, grid-gear, etc.) are always present and keep working.
+- **Default scope covers only the fold.** Your theme replaces `#fold-inner`. Use `"scope":"full"` in `theme.json` to also replace the scroll area (see [Theme scope](#theme-scope)).
 - **CSS load order.** `theme.css` is loaded as `active-theme.css` right after `dashboard.css` in the page `<head>`. Your selectors win over app rules at equal specificity. Use your own class names (prefix them) to avoid accidentally changing app UI outside `#fold-inner`.
 - **Content Security Policy.** The page enforces `style-src file:` - only local files are allowed. External CSS, Google Fonts and icon CDNs are blocked at the browser level before the sanitizer even runs. Inline font-face with base64 data works; external font URLs do not.
 - **Dark / light mode.** Do not hardcode colours  -  use `var(--card)`, `var(--text)`, etc. so the theme works in both modes automatically.
 - **Testing.** Open `telemetry.html` directly in a desktop browser (Chrome / Firefox). The `LB` bridge is absent so the theme CSS and HTML do not load from storage, but you can: (a) paste your HTML into `#fold-inner` via DevTools, (b) manually inject a `<link>` pointing to your local `theme.css`, (c) add a `<script>` that fills `data-lb` elements with dummy values  -  that script is only for browser testing and must be removed before zipping.
 - **Tile manager sync.** If you add `data-tile-id` elements, their labels appear in the theme manager. Keep labels short (under 20 characters) so the list stays readable.
+- **`rgb()` relative colour syntax: flat origins only.** `rgb(from var(--card) r g b / var(--tile-alpha))` works on Android WebView 111+. `rgb(from color-mix(...) r g b / alpha)` does **not**  -  a `color-mix()` origin silently drops the alpha channel. Use a flat CSS variable as the origin (e.g. `var(--card)`, `var(--value)`, `var(--btnfill)`), never a `color-mix()` result.

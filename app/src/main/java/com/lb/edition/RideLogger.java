@@ -224,6 +224,8 @@ public final class RideLogger {
             if (!Double.isNaN(watt)) {
                 o.put("power", Math.round(watt) / 1000.0);
             }
+            o.remove("fwUniquecode");   // per-unit pseudo-serial - never into the exported ride log
+            o.remove("btName");         // user-renamed BLE name (FIN) - PII, not needed for analysis
             return o.toString();
         } catch (Throwable t) {
             return json;

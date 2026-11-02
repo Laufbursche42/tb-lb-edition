@@ -64,7 +64,7 @@ Everything below is implemented and shipping in the app.
 
 ### Custom themes
 
-- **Bring your own dashboard.** Replace the main fold with your own layout: import a theme as a single `.zip` bundle (`theme.html` + `theme.css`, with an optional `theme.json`) from **Display settings -> Theme manager**, then activate, export or delete it. The built-in layout is always one tap away.
+- **Bring your own dashboard.** Replace the main fold with your own layout: import a theme as a single `.zip` bundle (`theme.html` + `theme.css`, with an optional `theme.json`) from the **Theme manager** (one tap from Settings), then activate, export or delete it. Set `"scope":"full"` in `theme.json` to replace the whole scrollable dashboard instead of only the fold. The built-in layout is always one tap away.
 - **Live data hooks.** A theme binds live telemetry through `data-lb` attributes (`speed`, `soc`, `power`, `gear`), toggles classes with `data-lb-state` (e.g. `park`) and can re-arm the triple-tap speed unlock with `data-lb-action="speed-unlock"`. The format is shared across Laufbursche apps, so a theme `.zip` from another one works here too.
 - **Safe by design.** Imported HTML is sanitised before storage - script tags, iframes, inline event handlers, `javascript:`/`data:` URLs and external resources are stripped, so a theme is structure and CSS only and never runs code.
 - **Built-in guide.** A full bilingual (English / German) authoring guide ships inside the app (no internet needed), reachable from the Theme manager.
@@ -147,7 +147,7 @@ That colour is the app's own memory of what it last sent, not a value the scoote
 - **Ride log** (**off by default**) - when enabled, it records **all main-screen values once per minute** while you ride. Recording only starts once you are actually moving (after the scooter's speed first goes above 0), so parking or connecting without riding produces no ride. It runs as a foreground service so it keeps recording with the screen off, keeps **all rides** (delete them individually or in bulk by period) and lets you export each ride as **CSV or JSON** from the Scooter Info page (via the Android share sheet).
 - **In-app debug logging** - persistent, with a red banner while active and an **export** button. No PC needed.
 - **Full-screen toggle** (when off, the app sits below the Android status bar), **km / mph** units (mph converts both speed and distance - Trip, Odometer and saved-route distances - to miles), **light / dark app theme** with its own colour editor (tile colour, background and text brightness, kept separately for each theme) and a **"Version Info & Disclaimer"** entry.
-- **A language switch in the Display settings** turns the whole interface, help popups included, English or German. On the first start the app follows your phone's language and your choice sticks after that.
+- **A language switch in Settings** turns the whole interface, help popups included, English or German. On the first start the app follows your phone's language and your choice sticks after that.
 - **"What is new"** in the Settings menu opens a short changelog of what changed in the current version.
 
 ## What the app deliberately does not do

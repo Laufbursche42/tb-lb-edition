@@ -59,6 +59,7 @@ public class MainActivity extends Activity {
     private static final int REQ_THEME_ZIP = 4713;
 
     private WebView webView;
+    private boolean jsCanGoBack;   // set by LB.setCanGoBack(): true while a JS page overlay is open
     private BleManager ble;
     private DebugLog debugLog;
     private RideLogger rideLogger;
@@ -91,6 +92,7 @@ public class MainActivity extends Activity {
         // Delegated to UiChrome so every screen (main + native) shares the exact same inset logic.
         prefs = getSharedPreferences("lb", MODE_PRIVATE);
         themeManager = new ThemeManager(this);
+        ThemeSeeder.seed(this, themeManager);
         UiChrome.applyFullscreen(this);
 
         configureWebView();
@@ -531,8 +533,8 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
-        if (webView != null && webView.canGoBack()) {
-            webView.goBack();
+        if (jsCanGoBack && webView != null) {
+            webView.evaluateJavascript("if(window.__navBack)window.__navBack();", null);
         } else {
             super.onBackPressed();
         }
@@ -543,6 +545,13 @@ public class MainActivity extends Activity {
      * Every method is null/exception-safe - nothing throws across the bridge.
      */
     private class LbBridge {
+
+        /** Tells the native back handler whether a JS page overlay is open (so Android back closes
+         *  the page instead of exiting the app). Mirrors the other Laufbursche editions. */
+        @JavascriptInterface
+        public void setCanGoBack(boolean canGoBack) {
+            jsCanGoBack = canGoBack;
+        }
 
         /** End the active turn-by-turn navigation session (stops the foreground service). */
         @JavascriptInterface
@@ -578,6 +587,7 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void connect(String addr) {
             try {
+                if (debugLog != null) debugLog.addRedactLiteral(addr);
                 Log.i(TAG, "LB.connect(" + logSafe(addr) + ")");
                 if (ble != null) ble.connect(addr);
             } catch (Throwable t) {
@@ -589,6 +599,7 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void connect(String addr, String name) {
             try {
+                if (debugLog != null) { debugLog.addRedactLiteral(addr); debugLog.addRedactLiteral(name); }
                 Log.i(TAG, "LB.connect(" + logSafe(addr) + ", " + logSafe(name) + ")");
                 if (ble != null) ble.connect(addr, name);
             } catch (Throwable t) {
@@ -641,6 +652,7 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void setPin(String pin) {
             try {
+                if (debugLog != null) debugLog.addRedactLiteral(pin);
                 Log.i(TAG, "LB.setPin(***)");
                 if (ble != null) ble.setPin(pin);
             } catch (Throwable t) {
@@ -690,7 +702,7 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void startStream(String url) {
-            Log.i(TAG, "LB.startStream(" + logSafe(url) + ")");
+            Log.i(TAG, "LB.startStream(" + com.lb.srt.StreamService.redact(url) + ")");
             try {
                 if (url == null || url.trim().isEmpty()) {
                     Log.w(TAG, "startStream: empty url, ignoring");

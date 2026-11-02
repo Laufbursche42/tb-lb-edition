@@ -72,6 +72,19 @@ html, body {
   position: relative;
 }
 
+/* ── Bottombar (bottom-nav mode) ───────────────────────────── */
+#bottombar {
+  display: none; /* shown by applyBottomNav() */
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
+  height: 32px;
+  background: var(--card); border-top: 1px solid var(--border);
+  align-items: stretch;
+}
+.bb-btn { flex: 1; height: 32px; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+#bb-btn-left, #bb-btn-right { font-size: 11px; font-weight: 600; letter-spacing: .02em; }
+body.bottom-nav-active #scroller { padding-bottom: 32px; }
+body.bottom-nav-active #btn-settings { display: none !important; }
+
 /* ── Topbar ────────────────────────────────────────────────── */
 #topbar {
   display: flex; align-items: center; justify-content: space-between;
@@ -123,6 +136,11 @@ html, body {
 /* children must NOT shrink - otherwise the flex column squashes instead of scrolling */
 #scroller > * { flex-shrink: 0; }
 #scroller::-webkit-scrollbar { display: none; }
+/* Hide content during theme init so the default HTML never flashes before the custom
+   theme HTML is injected. visibility:hidden (not display:none) preserves layout so
+   fitFold() still measures the correct dimensions. The attribute is removed by
+   initActiveTheme() once injection and var-injection are done. */
+html[data-theme-loading] #scroller { visibility: hidden; }
 
 /* ── First-screen fold ─────────────────────────────────────── */
 /* The fold holds the live values a rider reads while moving, and fitFold() scales it so it
@@ -137,15 +155,19 @@ html, body {
   transform-origin: top left; width: 100%;
 }
 #fold-inner > * { flex-shrink: 0; }
+/* Per-tile minimum heights - set via --tile-h-* CSS vars in the style editor (0 = natural). */
+#speed-row      { min-height: var(--tile-h-speed, 0px); }
+#hero-row       { min-height: var(--tile-h-hero, 0px); }
+#motors-section { min-height: var(--tile-h-motors, 0px); }
 
 /* ── Speed Drums ───────────────────────────────────────────── */
 #speed-row {
-  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  display: grid; grid-template-columns: 1fr 1fr;
   gap: var(--gap);
 }
 .speed-drum {
   background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 12px 10px 10px; min-width: 0;
+  border-radius: var(--radius); padding: 12px 10px 10px;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 2px;
 }
@@ -161,19 +183,39 @@ html, body {
   font-size: var(--sz-speed-lbl, var(--fs-base)); color: var(--label); margin-top: 4px;
   font-weight: var(--fw-medium); letter-spacing: .04em;
 }
-/* Triple-tap the BLE speed tile to unlock/lock (ZYD only) - the "unlocked" class is local UI
-   memory only, there is no live readback for this on the wire. */
-.speed-drum.ble-drum { cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.speed-drum.ble-drum.unlocked { border-color: var(--danger); }
-.speed-drum.ble-drum.unlocked .sd-val { color: var(--danger); }
 
 /* ── Hero Metrics ──────────────────────────────────────────── */
-/* Hero cells and motor cells are the same kind of tile row. Flex (not a fixed 3-col grid) so a
-   tile hidden per family (e.g. the whole row on LEGACY) lets the rest reflow instead of leaving a
-   gap where a grid column used to be. */
-#hero-row, #motor-row, #motor-row-2 {
-  display: flex;
+/* Hero cells and motor cells are the same kind of tile row, so they share one three-column grid
+   (the canonical Default fold carries three cells per row). */
+#hero-row, #motor-row, #motor-row-2, #motor-row-3, #motor-row-4, #motor-row-5 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: var(--gap);
+}
+.motor-cell.slot-empty,
+#motors-section.slot-sect-empty { display: none; }
+/* Default only: applyDataSlots adds .lb-packed to #motor-area so the cells this app fills flow
+   into ONE shared three-column grid and pack together (no stretched single cell per row). A
+   custom theme never gets .lb-packed, so it keeps its own per-row layout untouched. */
+#motor-area.lb-packed { display: flex; flex-direction: row; flex-wrap: wrap; gap: var(--gap); justify-content: center; align-content: start; }
+#motor-area.lb-packed > [id^="motor-row"] { display: contents; }
+#motor-area.lb-packed .motor-cell { flex: 0 1 calc((100% - 2 * var(--gap)) / 3); }
+/* Driver-rendered live-value cells (renderTelemetryCells) flow into one packed three-column grid
+   (hero + live values); presence-hidden cells drop out so the visible set packs and a partial last
+   row centres. Same contract in a theme's own #tele-fold, so the skin stays manufacturer-neutral. */
+#tele-fold {
+  display: flex; flex-direction: row; flex-wrap: wrap; gap: var(--gap);
+  justify-content: center; align-content: start;
+}
+#tele-fold > .hero-cell, #tele-fold > .motor-cell {
+  flex: 0 1 calc((100% - 2 * var(--gap)) / 3);
+  overflow: hidden;
+}
+/* In the packed grid the hero value takes the motor-value size and long words (e.g. gear text) clip
+   instead of spilling into the next cell when fitFold scales the fold up. */
+#tele-fold .hc-val { font-size: var(--sz-hero-val, clamp(22px, 6vw, 30px)); }
+#tele-fold .hc-val, #tele-fold .mc-main {
+  max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .hero-cell {
   flex: 1; min-width: 0;
@@ -181,28 +223,44 @@ html, body {
   border-radius: var(--radius); padding: 12px 8px 10px;
   display: flex; flex-direction: column; align-items: center;
 }
-/* Uniform value size for every tile (hero and motor). The rider can override each row's sizes in
-   Display settings > Font sizes; words (e.g. a gear letter) and numbers share the same size, and
-   anything too wide is clipped with an ellipsis rather than resized per tile. */
+/* Value/label sizes take a theme- or rider-set --sz-* token (Display settings -> Font sizes), else
+   the built-in clamp. Same contract as every edition, so a universal theme renders identically. */
 .hero-cell .hc-val {
-  font-size: var(--sz-hero-val, clamp(20px, 6.5vw, 32px)); font-weight: var(--fw-heavy);
-  line-height: 1.05; letter-spacing: -.01em;
+  font-size: var(--sz-hero-val, clamp(28px, 9vw, 38px)); font-weight: var(--fw-heavy);
+  line-height: 1; letter-spacing: -.01em;
   font-variant-numeric: tabular-nums;
-  max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .hero-cell .hc-unit {
-  font-size: var(--sz-hero-lbl, var(--fs-md)); color: var(--label); margin-top: 3px; text-align: center;
+  font-size: var(--sz-hero-lbl, var(--fs-md)); color: var(--label); margin-top: 3px; white-space: nowrap; text-align: center;
+}
+.hero-cell .hc-tag {
+  margin-top: 5px; padding: 2px 7px;
+  border-radius: 5px; font-size: var(--fs-2xs); font-weight: var(--fw-bold);
+  letter-spacing: .06em;
 }
 #soc-val { color: var(--good); }
 #gear-val { color: var(--warn); }
 #current-val { color: var(--text); }
+.gear-tag-eco   { background: #1EE89A22; color: var(--good); }
+.gear-tag-drive { background: #3DB8FF22; color: var(--gps); }
+.gear-tag-sport { background: #FF505022; color: var(--danger); }
+.gear-tag-na    { background: var(--border); color: var(--label); }
 
 /* ── Data Grid ─────────────────────────────────────────────── */
 /* Shared card surface for the flat panels that clip their rows at the corners. */
-#data-grid, #legacy-data-grid, #actions-section {
+#data-grid, #actions-section, #all-values {
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--radius); overflow: hidden;
 }
+/* The ride grid has its own id (unique ids for the tile editor / drag placements) but the same card surface. */
+#data-grid-ride {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+/* Section wrappers after the fold (data-section-container): keep the header-to-panel spacing the
+   #scroller column gave them before they were wrapped. applyTileConfig() hides a wrapper whose
+   tiles are all hidden. */
+#sect-vehicle, #sect-ride, #sect-allvals { display: flex; flex-direction: column; gap: var(--gap); }
 .dg-row {
   display: grid; grid-template-columns: 1fr 1fr;
   border-bottom: 1px solid var(--border);
@@ -290,28 +348,14 @@ html, body {
 .del-btn:last-child { border-right: none; }
 .del-btn:active { background: #FF505015; }
 
-/* ── Settings Sheet ────────────────────────────────────────── */
-#settings-overlay {
-  position: fixed; inset: 0; z-index: 100;
-  background: rgba(0,0,0,.45);
-  opacity: 0; pointer-events: none;
-  transition: opacity .25s;
+/* Themed select used in the theme-editor panels. */
+select.theme-sel {
+  appearance: none; -webkit-appearance: none;
+  background: var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E") no-repeat right 8px center / 10px 6px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  color: var(--text); font-size: var(--fs-sm); font-family: inherit;
+  padding: 6px 28px 6px 10px; cursor: pointer; min-width: 100px;
 }
-#settings-overlay.open { opacity: 1; pointer-events: all; }
-#settings-sheet {
-  position: fixed; top: 0; right: 0; bottom: 0;
-  width: min(320px, 85vw); z-index: 101;
-  background: var(--card); border-left: 1px solid var(--border);
-  transform: translateX(100%); transition: transform .28s cubic-bezier(.4,0,.2,1);
-  overflow-y: auto; padding-top: var(--sat);
-}
-#settings-sheet.open { transform: translateX(0); }
-
-.settings-topbar {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 16px; border-bottom: 1px solid var(--border);
-}
-.settings-topbar h2 { font-size: var(--fs-xl); font-weight: var(--fw-bold); }
 #update-banners { display: flex; flex-direction: column; gap: 8px; padding: 12px 16px 0; }
 #update-banners:empty { display: none; }
 .update-banner { display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -425,71 +469,101 @@ html, body {
 }
 .mc-title { font-size: var(--fs-sm); font-weight: var(--fw-bold); color: var(--label); letter-spacing: .06em; }
 .mc-main {
-  font-size: clamp(20px, 6.5vw, 32px); font-weight: var(--fw-heavy); line-height: 1.05;
+  font-size: clamp(22px, 7vw, 30px); font-weight: var(--fw-heavy); line-height: 1.05;
   color: var(--value); font-variant-numeric: tabular-nums;
-  max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 /* Own line under the value, centred like the title and the value above it. */
 .mc-unit { font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--label); }
-/* Rider-adjustable per-row tile font sizes (Display settings > Font sizes); unset falls back to the built-in size. */
-#motor-row .mc-title { font-size: var(--sz-m1-top, var(--fs-sm)); }
-#motor-row .mc-main  { font-size: var(--sz-m1-mid, clamp(20px, 6.5vw, 32px)); }
-#motor-row .mc-unit  { font-size: var(--sz-m1-bot, var(--fs-sm)); }
-#motor-row-2 .mc-title { font-size: var(--sz-m2-top, var(--fs-sm)); }
-#motor-row-2 .mc-main  { font-size: var(--sz-m2-mid, clamp(20px, 6.5vw, 32px)); }
-#motor-row-2 .mc-unit  { font-size: var(--sz-m2-bot, var(--fs-sm)); }
 
-/* Motor tiles: ESC temp, motor temp, power - one row. */
+/* Rider-adjustable tile font sizes (Display settings -> Font sizes). Row-scoped (id + class beats the
+   plain class rule) so each row is independent. The var stays unset until a slider is moved, so the
+   default look is unchanged (the built-in clamp). Once set, the slider value IS the displayed size.
+   The big speed drums have their own larger range; their small unit is a normal label. */
+#speed-row .sd-val { font-size: var(--sz-speed-val, clamp(42px, 13vw, 64px)); }
+#speed-row .sd-unit { font-size: var(--sz-speed-lbl, var(--fs-base)); }
+#hero-row .hc-val { font-size: var(--sz-hero-val, clamp(28px, 9vw, 38px)); }
+#hero-row .hc-unit { font-size: var(--sz-hero-lbl, var(--fs-md)); }
+#motor-row .mc-title { font-size: var(--sz-m1-top, var(--fs-sm)); }
+#motor-row .mc-main { font-size: var(--sz-m1-mid, clamp(22px, 7vw, 32px)); }
+#motor-row .mc-unit { font-size: var(--sz-m1-bot, var(--fs-sm)); }
+#motor-row-2 .mc-title { font-size: var(--sz-m2-top, var(--fs-sm)); }
+#motor-row-2 .mc-main { font-size: var(--sz-m2-mid, clamp(22px, 7vw, 32px)); }
+#motor-row-2 .mc-unit { font-size: var(--sz-m2-bot, var(--fs-sm)); }
+#motor-row-3 .mc-title { font-size: var(--sz-m3-top, var(--fs-sm)); }
+#motor-row-3 .mc-main { font-size: var(--sz-m3-mid, clamp(22px, 7vw, 32px)); }
+#motor-row-3 .mc-unit { font-size: var(--sz-m3-bot, var(--fs-sm)); }
+#motor-row-4 .mc-title { font-size: var(--sz-m4-top, var(--fs-sm)); }
+#motor-row-4 .mc-main { font-size: var(--sz-m4-mid, clamp(22px, 7vw, 32px)); }
+#motor-row-4 .mc-unit { font-size: var(--sz-m4-bot, var(--fs-sm)); }
+#motor-row-5 .mc-title { font-size: var(--sz-m4-top, var(--fs-sm)); }
+#motor-row-5 .mc-main { font-size: var(--sz-m4-mid, clamp(22px, 7vw, 32px)); }
+#motor-row-5 .mc-unit { font-size: var(--sz-m4-bot, var(--fs-sm)); }
+
+/* The four live-value rows stack inside the #motors-section wrapper. */
 #motor-area { display: flex; flex-direction: column; gap: var(--gap); }
 
-/* Quick toggles (ZYD only): headlight, ambient, zero-start, cruise-off - four equal flat text
-   buttons in one row, same shape as the base app's #drive-quick/#motor-quick. Written
-   immediately on tap; the "on" class reflects the live base-param state. */
-#quick-toggles { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap); container-type: inline-size; }
-.qt-btn {
+/* Two stacked tile rows: temperatures and power above, currents below. */
+/* Motor-mode quick toggle: its own full-width row under the motor tiles, four equal buttons,
+   same shape as the drive-mode row below it. */
+#motor-quick { display: flex; gap: var(--gap); container-type: inline-size; }
+#quick-grid .mq-btn {
   flex: 1 1 0; min-width: 0; padding: 8px 1px;
   border: 1px solid var(--border); border-radius: var(--radius);
   background: var(--card); color: var(--label);
-  font-size: clamp(7px, 3.4cqi, 12px); font-weight: var(--fw-bold); line-height: 1.1;
-  font-family: inherit; white-space: nowrap; cursor: pointer;
+  font-size: var(--fs-xs); font-weight: var(--fw-bold); line-height: 1.1; cursor: pointer;
+  white-space: nowrap;
+  font-size: clamp(7px, 3.4cqi, 12px);   /* same reasoning as .dq-btn below */
   -webkit-tap-highlight-color: transparent;
 }
-.qt-btn:active { opacity: .7; }
-.qt-btn.on { background: var(--btnfill); color: #0A0C10; border-color: var(--btnfill); }
-/* Cruise-off while cruise is not active: nothing to turn off, so mark it unavailable (still
-   tappable, it is simply a no-op - unlike disconnected, this is not an error worth a toast). */
-.qt-btn.qt-locked { opacity: .45; }
-/* Not connected: whole row greyed and non-interactive-looking, but still clickable so a tap
-   shows the "Connect the scooter first" toast instead of doing nothing. */
-#quick-toggles.qt-disabled { opacity: .4; filter: grayscale(1); }
+#quick-grid .mq-btn:active { opacity: .7; }
+/* The active fills are the shared action-button variants (primary fill / good fill). */
+/* Not connected: whole control greyed and non-interactive */
+/* Greyed out while disconnected, but still clickable so a tap shows the "Connect the scooter
+   first" toast instead of doing nothing. The click handlers guard on the connection state. */
+#motor-quick.mq-disabled { opacity: .4; filter: grayscale(1); }
 
-/* Quick-button drag-to-reorder: ghost slots for hidden buttons + drop/drag markers. */
-.qt-btn.btn-drag-active { opacity: .55; outline: 2px dashed var(--btnfill); outline-offset: -2px; }
-.qt-btn.btn-drop-target { box-shadow: 0 0 0 2px var(--btnfill); }
-.qt-btn.btn-ghost-slot { opacity: .2; border: 2px dashed var(--btnfill); background: transparent; }
-.qt-btn.btn-ghost-slot.btn-drop-target { opacity: .55; }
-select.bb-sel { max-width: 55%; }
-
-/* Optional bottom navigation bar: hidden until applyBottomNav() sets display:flex. */
-#bottombar {
-  display: none;
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
-  background: var(--card); border-top: 1px solid var(--border);
-  align-items: stretch;
+/* Drive-mode quick toggles under the motor tiles: four equal-width buttons on one row. */
+/* No margin-top: #fold-inner already spaces its children by --gap, so an extra margin would
+   double the distance to the motor-mode row above. */
+#quick-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: auto; gap: var(--gap); container-type: inline-size; }
+#quick-grid .dq-btn {
+  flex: 1 1 0; min-width: 0; padding: 8px 1px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--card); color: var(--label);
+  font-size: var(--fs-xs); font-weight: var(--fw-bold); line-height: 1.1; cursor: pointer;
+  white-space: nowrap;
+  /* Sized from the row's own width, not in fixed px: fitFold() lays the fold out at
+     100/scale percent width, so a fixed size would grow relative to the buttons whenever the
+     fold scales up and would cut "Kickstart" off. cqi keeps the ratio constant at any scale.
+     The plain px line above stays as the fallback if container units are unavailable. */
+  font-size: clamp(7px, 3.4cqi, 12px);
+  -webkit-tap-highlight-color: transparent;
 }
-.bb-btn { flex: 1; height: 32px; font-size: 16px; display: flex; align-items: center; justify-content: center; }
-#bb-btn-left, #bb-btn-right { font-size: 11px; font-weight: 600; letter-spacing: .02em; }
-body.bottom-nav-active #scroller { padding-bottom: 32px; }
-body.bottom-nav-active #btn-settings { display: none !important; }
+#quick-grid .dq-btn:active { opacity: .7; }
+/* Cruise while the scooter is locked: the firmware refuses the write, so mark it as unavailable. */
+#quick-grid .dq-btn.dq-locked { opacity: .45; }
+#quick-grid.qg-disabled { opacity: .4; filter: grayscale(1); }
 
-/* LEGACY family: explanatory note where the Speed card would otherwise sit. */
-#legacy-note {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 12px; text-align: center;
-  font-size: var(--fs-md); color: var(--label);
+/* ── All values ──────────────────────────────────────────────── */
+/* #all-values takes the shared card surface defined with #data-grid. */
+.av-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px; border-bottom: 1px solid var(--border); gap: 8px;
 }
+.av-row:last-child { border-bottom: none; }
+.av-label { color: var(--label); font-size: var(--fs-base); flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.av-val { font-weight: var(--fw-semibold); font-size: var(--fs-lg); color: var(--value); font-variant-numeric: tabular-nums; text-align: right; flex: 0 0 auto; white-space: nowrap; }
+/* Subtle circular "?" info button per row; opens a shared explanation popup (event-delegated). */
+.av-help {
+  flex: 0 0 auto; width: 18px; height: 18px; border-radius: 50%;
+  border: 1px solid var(--label); background: transparent; color: var(--label);
+  font-size: var(--fs-xs); font-weight: var(--fw-bold); line-height: 1; padding: 0; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.av-help:hover, .av-help:active { background: var(--border); color: var(--text); }
 
-/* Subtle circular "?" info button, reused on every settings row (app + Trittbrett fields).
+/* Same subtle circular "?" as .av-help, reused on every settings row (app + controller + per-gear).
    Sits before the control so tapping it never toggles/edits the control. */
 .set-help {
   flex: 0 0 auto; width: 18px; height: 18px; border-radius: 50%;
@@ -588,6 +662,7 @@ body.bottom-nav-active #btn-settings { display: none !important; }
 }
 .settings-btn:active,
 #btn-scooter-settings:active, #btn-connect-scooter:active, #btn-export-logs:active, #btn-error-reports:active, #btn-navigation:active, #btn-info:active, #btn-battery:active, #btn-firmware:active, #btn-whatsnew:active, #btn-version-info:active { background: var(--border); }
+.settings-btn-secondary { color: var(--label); font-weight: normal; font-size: var(--fs-sm); margin-top: 4px; }
 /* #btn-stream-start (good fill) + #btn-stream-stop (neutral) are styled by the shared action-button base. */
 #stream-url { color: var(--text); background: var(--bg); border: 1px solid var(--border);
   border-radius: 8px; padding: 8px; font-family: monospace; }
@@ -596,28 +671,82 @@ body.bottom-nav-active #btn-settings { display: none !important; }
    Every sub-page is the same full-screen sheet that slides in from the right, so one shell
    carries all of them. #routes-scroller keeps its own block: it clips instead of scrolling. */
 #routes-page, #streaming-page,
-#connect-page, #scooter-page, #error-reports-page, #info-page, #display-page, #theme-page, #guide-page {
+#connect-page, #scooter-page, #error-reports-page, #info-page, #battery-page, #display-page, #theme-page, #guide-page, #settings-sheet {
   position: fixed; inset: 0; z-index: 120; background: var(--bg);
   display: flex; flex-direction: column;
   transform: translateX(100%); transition: transform .28s cubic-bezier(.4,0,.2,1);
 }
+/* Settings sits one step below the sub-pages so every sub-page (incl. #routes-page, which is
+   earlier in the DOM) opens on top of the open Settings sheet and back returns to it. */
+#settings-sheet { z-index: 119; }
 #routes-page.open, #streaming-page.open,
-#connect-page.open, #scooter-page.open, #error-reports-page.open, #info-page.open, #display-page.open, #theme-page.open, #guide-page.open { transform: translateX(0); }
-#streaming-scroller,
-#connect-scroller, #scooter-scroller, #error-reports-scroller, #info-scroller, #display-scroller, #theme-scroller, #guide-scroller {
+#connect-page.open, #scooter-page.open, #error-reports-page.open, #info-page.open, #battery-page.open, #display-page.open, #theme-page.open, #guide-page.open, #settings-sheet.open { transform: translateX(0); }
+#settings-scroller, #streaming-scroller, #theme-scroller, #guide-scroller,
+#connect-scroller, #scooter-scroller, #error-reports-scroller, #info-scroller, #battery-scroller, #firmware-scroller, #display-scroller {
   flex: 1; min-height: 0; overflow-y: auto; padding: var(--gap);
   display: flex; flex-direction: column; gap: 4px;
   padding-bottom: calc(var(--gap) + env(safe-area-inset-bottom, 0px) + 12px);
 }
+/* The theme page rows (theme list, tile/button/style editors) sit a little further from the edges. */
+#theme-scroller { padding-left: calc(var(--gap) + 5px); padding-right: calc(var(--gap) + 5px); }
 /* children must NOT shrink, otherwise the flex column squashes instead of scrolling */
-#routes-scroller > *, #streaming-scroller > *,
-#connect-scroller > *, #scooter-scroller > *, #error-reports-scroller > *, #info-scroller > *, #display-scroller > *, #theme-scroller > *, #guide-scroller > * { flex-shrink: 0; }
+#routes-scroller > *, #settings-scroller > *, #streaming-scroller > *, #theme-scroller > *, #guide-scroller > *,
+#connect-scroller > *, #scooter-scroller > *, #error-reports-scroller > *, #info-scroller > *, #battery-scroller > *, #firmware-scroller > *, #display-scroller > * { flex-shrink: 0; }
 
+/* ── Battery Info page ── */
+.bat-health {
+  border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 4px;
+  font-size: var(--fs-sm); line-height: 1.5;
+}
+.bat-health.ok { border-color: var(--good); background: color-mix(in srgb, var(--good) 12%, transparent); }
+.bat-health.bad { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+.bat-health .bat-health-title { font-weight: var(--fw-semibold); margin-bottom: 4px; }
+.bat-health.ok .bat-health-title { color: var(--good); }
+.bat-health.bad .bat-health-title { color: var(--danger); }
+.bat-health ul { margin: 4px 0 0; padding-left: 18px; }
+.cell-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 6px; }
+.cell-tile {
+  border: 1px solid var(--border); border-radius: 8px; padding: 7px 8px; background: var(--card);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.cell-tile .cell-name { font-size: var(--fs-sm); color: var(--label); }
+.cell-tile .cell-volt { font-size: var(--fs-md); font-weight: var(--fw-semibold); font-family: monospace; }
+.cell-tile.cell-full .cell-volt { color: var(--good); }
+.cell-tile.cell-mid  .cell-volt { color: var(--warn); }
+.cell-tile.cell-low  .cell-volt { color: var(--danger); }
+.cell-tile.cell-bal { border-color: var(--ble); }
+.cell-tile .cell-bal-tag { font-size: var(--fs-sm); color: var(--ble); }
+
+/* Firmware update page */
+.fw-warn {
+  border: 1px solid var(--danger); border-radius: 10px; padding: 10px 12px; margin-bottom: 4px;
+  background: color-mix(in srgb, var(--danger) 12%, transparent); font-size: var(--fs-sm); line-height: 1.5;
+}
+.fw-warn b { color: var(--danger); }
+#fw-fileinfo { font-size: var(--fs-sm); line-height: 1.6; margin-top: 8px; }
+#fw-fileinfo .fw-row { display: flex; justify-content: space-between; gap: 10px; }
+#fw-fileinfo .fw-k { color: var(--label); flex-shrink: 0; white-space: nowrap; }
+#fw-fileinfo .fw-row > span:last-child { min-width: 0; text-align: right; overflow-wrap: anywhere; }
+.fw-checks { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.fw-check { display: flex; align-items: flex-start; gap: 8px; }
+.fw-check > span:last-child { flex: 1; }
+.fw-verdict { margin-top: 10px; padding: 8px 10px; border-radius: 8px; font-size: var(--fs-sm); font-weight: var(--fw-semibold); }
+.fw-verdict.ok  { background: color-mix(in srgb, var(--ble) 16%, transparent); color: var(--ble); }
+.fw-verdict.bad { background: color-mix(in srgb, var(--danger) 16%, transparent); color: var(--danger); }
+/* Hidden until the compatibility check fails: the script switches it back to flex, which the
+   shared .consent-row already supplies. */
+#fw-override-wrap { display: none; margin: 4px 0 10px; color: var(--danger); }
+#fw-consent-wrap { margin: 4px 0 0; }
+.fw-badge { display: inline-block; min-width: 16px; text-align: center; padding: 1px 6px; border-radius: 999px; font-size: var(--fs-xs); font-weight: var(--fw-bold); }
+.fw-badge.ok { background: color-mix(in srgb, var(--ble) 22%, transparent); color: var(--ble); }
+.fw-badge.warn { background: color-mix(in srgb, var(--danger) 20%, transparent); color: var(--danger); }
 /* ── Action buttons (shared base) ────────────────────────────
-   ONE base for every full-tap "action" button: connect scan/disconnect, streaming start/stop
-   plus the settings Send buttons. It holds the shared look (12px pad, 9px radius, hairline
-   border, base/bold type, transparent tap highlight); the thin variants below add only the
-   colour + width differences (neutral / primary-fill / good-fill / danger-outline). */
+   ONE base for every full-tap "action" button: firmware pick/start/cancel, connect
+   scan/disconnect, streaming start/stop plus the per-gear/settings Save. It holds the shared look
+   (12px pad, 9px radius, hairline border, base/bold type, transparent tap highlight); the thin
+   variants below add only the colour + width differences (neutral / primary-fill / good-fill /
+   danger-outline). */
+#btn-fw-pick, #btn-fw-start, #btn-fw-cancel,
 #btn-scan, #btn-disconnect,
 #btn-stream-start, #btn-stream-stop,
 .gs-save-btn {
@@ -626,22 +755,39 @@ body.bottom-nav-active #btn-settings { display: none !important; }
   font-size: var(--fs-base); font-weight: var(--fw-bold);
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
-/* Full-width action buttons (save); scan + stream sit in a flex row. */
-.gs-save-btn { width: 100%; }
-/* Variant: primary fill (also the accept button of the disclaimer, the one modal button that
-   grants something rather than dismissing). */
-#btn-scan, .gs-save-btn, #disclaimer-accept {
+/* Full-width action buttons (firmware / save); scan + stream sit in a flex row. */
+#btn-fw-pick, #btn-fw-start, #btn-fw-cancel, .gs-save-btn { width: 100%; }
+#btn-fw-pick, #btn-fw-start, #btn-fw-cancel { text-align: center; }
+/* Variant: primary fill (also the selected motor-mode button and the accept button of the
+   disclaimer, the one modal button that grants something rather than dismissing). */
+#btn-fw-start, #btn-scan, .gs-save-btn, #disclaimer-accept,
+#quick-grid .mq-btn.active, #quick-grid .dq-btn.active {
   background: var(--btnfill); color: #0A0C10; border-color: var(--btnfill);
 }
-/* Variant: good fill (start streaming). */
-#btn-stream-start { background: var(--good); color: #06251a; border-color: var(--good); }
-/* Variant: danger outline (disconnect). */
-#btn-disconnect { background: var(--bg); color: var(--danger); border-color: var(--danger); }
-/* Disabled (disclaimer accept before the box is ticked) */
+/* Variant: good fill (start streaming, Smart on). Must stay after the primary fill: the Smart
+   button carries .mq-btn and .mq-smart at equal specificity, so the later rule decides. */
+#btn-stream-start,
+#quick-grid .mq-smart.active { background: var(--good); color: #06251a; border-color: var(--good); }
+/* Variant: neutral card (firmware pick) */
+#btn-fw-pick { background: var(--card); color: var(--text); }
+/* Variant: danger outline (cancel / disconnect) */
+#btn-fw-cancel, #btn-disconnect { background: var(--bg); color: var(--danger); border-color: var(--danger); }
+/* Disabled (firmware start, disclaimer accept before the box is ticked) */
+#btn-fw-start:disabled,
 #disclaimer-accept:disabled { background: var(--border); color: var(--label); border-color: var(--border); cursor: default; }
 /* Pressed (streaming fades a touch lighter) */
+#btn-fw-pick:active, #btn-fw-start:active, #btn-fw-cancel:active,
 #btn-scan:active, #btn-disconnect:active, .gs-save-btn:active { opacity: .75; }
 #btn-stream-start:active, #btn-stream-stop:active { opacity: .7; }
+.fw-bar { height: 12px; border-radius: 999px; background: var(--border); overflow: hidden; }
+#fw-bar-fill { height: 100%; width: 0; background: var(--ble); transition: width .25s ease; }
+#fw-progress-text { font-size: var(--fs-md); font-weight: var(--fw-semibold); text-align: center; margin: 6px 0; font-variant-numeric: tabular-nums; }
+#fw-phase { font-size: var(--fs-sm); color: var(--label); text-align: center; }
+#fw-log {
+  margin-top: 6px; font-family: monospace; font-size: var(--fs-xs); line-height: 1.6;
+  background: var(--card, var(--border)); border-radius: 8px; padding: 8px 10px;
+  max-height: 220px; overflow-y: auto; white-space: pre-wrap; word-break: break-word;
+}
 
 /* Error report rows */
 .err-item {
@@ -689,6 +835,24 @@ body.bottom-nav-active #btn-settings { display: none !important; }
 .scan-addr { font-size: var(--fs-xs); color: var(--label); margin-top: 2px; font-family: monospace; }
 .scan-rssi { font-size: var(--fs-sm); color: var(--gps); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
+/* Segmented control (motor mode / cruise) */
+.seg {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+  border: 1px solid var(--border); border-radius: 9px; overflow: hidden;
+}
+.seg button {
+  padding: 9px 6px; border: none; background: var(--bg);
+  color: var(--text); font-size: var(--fs-sm); font-weight: var(--fw-bold); cursor: pointer;
+  border-right: 1px solid var(--border);
+  -webkit-tap-highlight-color: transparent;
+}
+.seg button:last-child { border-right: none; }
+.seg button.active { background: var(--btnfill); color: #0A0C10; }
+/* Locked scooter: cruise cannot be set, so grey the control out instead of taking a write the
+   controller would discard. Matches .set-ctrl:disabled. */
+.seg.seg-disabled { opacity: 0.55; }
+.seg.seg-disabled button { cursor: default; }
+
 /* Scooter-settings numeric / select inputs */
 .set-ctrl {
   width: 92px; flex: 0 0 auto; text-align: right;
@@ -698,17 +862,6 @@ body.bottom-nav-active #btn-settings { display: none !important; }
 select.set-ctrl { text-align: left; -webkit-appearance: none; appearance: none; }
 .set-ctrl:disabled { opacity: 0.55; }
 
-/* Per-row Send button on every generated Trittbrett settings field (and the gear row). Small
-   companion to .set-ctrl, not a full-width action button. */
-.mini-send-btn {
-  flex: 0 0 auto; padding: 7px 12px; border-radius: 7px;
-  border: 1px solid var(--btnfill); background: transparent; color: var(--btnfill);
-  font-size: var(--fs-sm); font-weight: var(--fw-bold); cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-.mini-send-btn:active { background: color-mix(in srgb, var(--btnfill) 18%, transparent); }
-.mini-send-btn:disabled { opacity: 0.4; border-color: var(--border); color: var(--label); cursor: default; }
-
 /* .gs-save-btn (per-gear "Save gear" + global "Save settings"; primary fill, full width)
    is styled by the shared action-button base above. */
 
@@ -717,24 +870,22 @@ select.set-ctrl { text-align: left; -webkit-appearance: none; appearance: none; 
 .tb-spacer { width: 40px; }
 /* Spacing under a settings sub-label / button description (was inline margin:6px 0 10px). */
 .note-gap { margin: 6px 0 10px; }
-  /* Family/model banner in the settings sheet. The FAMILY line is authoritative (from the live
-     `family` field); the model line + manual override below it are a cosmetic best-effort guess. */
+  /* Model gating: the settings UI works on every Trittbrett scooter. Fighter-Mini-only features carry
+     .fighter-only and hide only when a known non-Fighter model is connected (so they stay visible by
+     default and when disconnected). The Tetra (unsupported) additionally hides all settings groups. */
   #model-banner { padding: 8px 2px 2px; font-size: var(--fs-md); color: var(--label); }
   #model-banner .model-line { margin-bottom: 6px; }
-  #model-name, #family-name { font-weight: var(--fw-semibold); color: var(--text); }
+  #model-name { font-weight: var(--fw-semibold); color: var(--text); }
+  #model-unsupported { display: none; color: var(--danger); font-weight: var(--fw-semibold); }
+  body.is-tetra #model-unsupported { display: inline; }
   #model-pick-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   #model-pick-row .model-pick-label { color: var(--label); }
   #model-select { flex: 1 1 auto; min-width: 150px; padding: 7px 8px; border-radius: 8px;
                   background: var(--card); color: var(--text); border: 1px solid var(--border); font-size: var(--fs-md); }
   #model-manual-note { display: none; margin-top: 5px; font-size: var(--fs-sm); color: var(--label); }
   body.model-manual #model-manual-note { display: block; }
-
-  /* Family gating: ZYD-only UI (hero row, motor tiles, speed card, data grid, most settings)
-     hides on a LEGACY connection; the LEGACY-only note/banner shows only then. Both stay visible
-     by default and while disconnected, matching the app's ZYD-first audience. */
-  body.is-legacy .zyd-only { display: none !important; }
-  .legacy-only { display: none; }
-  body.is-legacy .legacy-only { display: block; }
+  body.is-other .fighter-only, body.is-tetra .fighter-only { display: none !important; }
+  body.is-tetra #settings-sheet .settings-group { display: none !important; }
 
   /* Draggable dashboard navigation banner (bottom, low profile). Fed by window.__onNav. */
   #nav-banner { position: fixed; left: 8px; right: 8px; bottom: 12px; z-index: 950;
@@ -818,11 +969,18 @@ select.set-ctrl { text-align: left; -webkit-appearance: none; appearance: none; 
   border: 1px solid var(--border); background: var(--bg); color: var(--text);
   font-family: monospace; font-size: var(--fs-md);
 }
+/* A thin red stripe that sits IN FLOW directly below the icon bar (never over it, never large).
+   flex-shrink:0 keeps its slim height; it only takes space while debug logging is active. */
+/* Top banners live IN FLOW inside #app, directly under the topbar (see #topbanners in
+   telemetry.html), never fixed over it. #topbanners itself takes no space; each banner is a
+   thin line that only appears when toggled on. Because they follow #topbar in the flex column
+   they can NEVER cover the title or the icon buttons. */
+#topbanners { flex-shrink: 0; }
 .debug-banner.debug-banner {
-  display: none; position: fixed; top: 0; left: 0; right: 0;
-  background: #c0392b; color: #fff; text-align: center; z-index: 9999;
-  font-size: var(--fs-sm); font-weight: var(--fw-bold); padding: 4px 8px;
-  letter-spacing: .3px;
+  display: none; flex-shrink: 0;
+  background: #c0392b; color: #fff; text-align: center;
+  font-size: 10px; font-weight: var(--fw-bold); line-height: 1.3; padding: 1px 8px;
+  letter-spacing: .3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 /* ── Language switch and the what-is-new modal ─────────────────────────────── */
@@ -847,15 +1005,19 @@ select.set-ctrl { text-align: left; -webkit-appearance: none; appearance: none; 
 }
 .range-ctrl { width: 100%; accent-color: var(--btnfill); height: 28px; cursor: pointer; }
 
-/* Secondary settings button: plain-weight link-style action (e.g. the theme guide opener). */
-.settings-btn-secondary { color: var(--label); font-weight: normal; font-size: var(--fs-sm); margin-top: 4px; }
-
 /* ── Theme manager page ── */
-.theme-row {
+.theme-list-toggle {
   display: flex; align-items: center; gap: 8px;
   padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px;
-  background: var(--card);
+  background: var(--card); cursor: pointer;
+  user-select: none; -webkit-user-select: none;
 }
+.theme-list-toggle-label { flex: 1; font-size: var(--fs-md); font-weight: 500; color: var(--text); }
+.theme-list-chevron { font-size: 10px; color: var(--label); transition: transform .15s; flex-shrink: 0; }
+.theme-list-toggle.open .theme-list-chevron { transform: rotate(90deg); }
+.theme-list-body { display: none; padding: 6px 0 0; }
+.theme-list-body.open { display: block; }
+.theme-row { display: flex; align-items: center; gap: 8px; padding: 10px 6px; }
 .theme-row-left { flex: 1; min-width: 0; }
 .theme-name { font-size: var(--fs-md); color: var(--text); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .theme-active-badge {
@@ -864,40 +1026,111 @@ select.set-ctrl { text-align: left; -webkit-appearance: none; appearance: none; 
   color: var(--good); border: 1px solid var(--good);
   border-radius: 4px; padding: 1px 5px; margin-left: 6px; vertical-align: middle;
 }
+.theme-version { font-size: 10px; color: var(--label); margin-left: 6px; vertical-align: middle; opacity: .8; }
+#std-tile-pool { display: none !important; }
+#std-tile-extras { padding: 0; }
+.tile-editor-add-row { opacity: .85; }
+.tile-add-btn { padding: 2px 10px; font-size: var(--fs-sm); border-radius: var(--radius); background: var(--btnfill); color: var(--btntext); border: none; cursor: pointer; flex-shrink: 0; }
+.tile-remove-btn { padding: 2px 7px; font-size: var(--fs-sm); border-radius: var(--radius); background: transparent; color: var(--label); border: 1px solid var(--border); cursor: pointer; flex-shrink: 0; }
+.tile-source-sel { font-size: var(--fs-sm); background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); padding: 2px 4px; flex-shrink: 0; }
+.tile-editor-reset-btn { display: block; width: 100%; margin-top: 10px; padding: 8px; font-size: var(--fs-sm); font-weight: var(--fw-bold); border-radius: var(--radius); background: transparent; color: var(--label); border: 1px solid var(--border); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.tile-editor-reset-btn:active { background: var(--border); }
 .theme-row-actions { display: flex; gap: 6px; flex-shrink: 0; }
-.theme-row-actions button { padding: 5px 10px; font-size: var(--fs-sm); }
+.theme-row-actions button {
+  padding: 5px 10px; font-size: var(--fs-sm);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--card); color: var(--text);
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.theme-row-actions button:active { opacity: .7; }
+.theme-row-actions .tm-btn-primary { background: var(--btnfill); color: #0A0C10; border-color: var(--btnfill); }
+.theme-row-actions .tm-btn-danger { color: var(--danger); border-color: var(--danger); }
 
-/* ── Theme tile editor + tile drag ── */
+/* ── Theme customise panels (tile editor + style editor) ── */
 .theme-section-title {
   font-size: var(--fs-sm); font-weight: 600; color: var(--text-dim);
   text-transform: uppercase; letter-spacing: .08em;
   padding: 14px 0 6px;
 }
-#tile-editor { padding: 0 0 4px; }
+#bb-shortcut-rows, #tile-editor, #btn-row-editor, #style-editor { display: none; }
+#tile-editor, #style-editor { padding: 0 0 4px; }
 .tile-editor-row {
   display: flex; align-items: center; gap: 8px;
   padding: 6px 0; border-bottom: 1px solid var(--border);
 }
-.tile-toggle { width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--btnfill); cursor: pointer; }
+.tile-toggle {
+  -webkit-appearance: none; appearance: none;
+  width: 18px; height: 18px; flex-shrink: 0; cursor: pointer;
+  border: 2px solid #888; border-radius: 3px;
+  background: transparent; position: relative; vertical-align: middle;
+}
+.tile-toggle:checked { background: #4A90E2; border-color: #4A90E2; }
+.tile-toggle:checked::after {
+  content: ''; position: absolute;
+  left: 3px; top: -1px; width: 5px; height: 10px;
+  border: 2px solid #fff; border-top: none; border-left: none;
+  transform: rotate(45deg);
+}
 .tile-edit-lbl { flex: 1; font-size: var(--fs-sm); color: var(--text); }
-[data-tile-id].tile-drag-active { opacity: .55; outline: 2px dashed var(--value); outline-offset: -2px; }
-[data-tile-id].tile-drop-target { box-shadow: 0 0 0 2px var(--value); }
+/* ── Drag: dashboard + editor ── */
+[data-cell-id].cell-drag-active { outline: 2px solid var(--value); opacity: .6; transform: scale(.94); z-index: 1; }
+[data-cell-id].cell-drop-target { outline: 2px dashed var(--value); }
+[data-tile-id].tile-drag-active { opacity: .45; outline: 2px dashed var(--value); outline-offset: -2px; filter: brightness(.7); }
+[data-tile-id].tile-drop-target { outline: 3px solid var(--value); outline-offset: -2px; opacity: .8; }
 .tile-editor-row.tile-drag-active { opacity: .5; }
 .tile-editor-row.tile-drop-above { border-top: 2px solid var(--value); }
 .tile-editor-row.tile-drop-below { border-bottom: 2px solid var(--value); }
-.tile-drag-handle {
-  font-size: 20px; color: var(--label); padding: 0 6px;
-  touch-action: none; user-select: none; cursor: grab; flex-shrink: 0;
-}
+[data-btn-id].btn-drag-active { opacity: .55; outline: 2px dashed var(--value); outline-offset: -2px; }
+[data-btn-id].btn-drop-target { box-shadow: 0 0 0 2px var(--value); }
+[data-btn-id].btn-ghost-slot { opacity: .2; border: 2px dashed var(--clr-accent, #448aff); background: transparent; }
+[data-btn-id].btn-ghost-slot.btn-drop-target { opacity: .55; }
+.tile-drag-handle { font-size: 20px; color: var(--label); padding: 0 6px; touch-action: none; user-select: none; cursor: grab; flex-shrink: 0; }
 .theme-hint { font-size: 10px; color: var(--label); font-weight: normal; }
-.tile-editor-reset-btn {
-  float: right; margin-bottom: 6px;
-  font-size: 11px; padding: 3px 8px; border-radius: var(--radius);
-  background: var(--card); border: 1px solid var(--border); color: var(--label);
-  cursor: pointer;
+.btn-slot-sel { flex: 1; }
+.btn-slot-del {
+  flex-shrink: 0; background: none; border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--label); font-size: 14px;
+  padding: 2px 8px; cursor: pointer; line-height: 1;
+}
+.btn-slot-del:active { background: var(--border); }
+.style-var-num {
+  width: 58px; background: var(--card); border: 1px solid var(--border);
+  color: var(--text); border-radius: 4px; padding: 4px 6px;
+  font-size: var(--fs-sm); text-align: right; flex-shrink: 0;
+}
+.style-var-unit { font-size: 11px; color: var(--label); margin-left: 2px; flex-shrink: 0; }
+.tile-mv {
+  padding: 2px 8px; font-size: 14px; border: 1px solid var(--border);
+  background: var(--card); color: var(--text); border-radius: 5px;
+  cursor: pointer; flex-shrink: 0;
+}
+.tile-mv:disabled { opacity: .3; cursor: default; }
+.style-editor-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0; border-bottom: 1px solid var(--border); gap: 10px;
+}
+.style-var-lbl { font-size: var(--fs-sm); color: var(--text); flex: 1; }
+.style-var-color { width: 44px; height: 34px; padding: 2px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; background: var(--card); flex-shrink: 0; }
+.style-var-range-wrap { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.style-var-range { width: 120px; accent-color: var(--btnfill); cursor: pointer; }
+.style-var-val { font-size: var(--fs-sm); color: var(--text-dim); min-width: 36px; text-align: right; }
+.style-reset-btn {
+  margin-top: 10px; padding: 7px 16px; font-size: var(--fs-sm);
+  border: 1px solid var(--border); background: var(--card); color: var(--text-dim);
+  border-radius: 7px; cursor: pointer;
 }
 
 /* ── Theme guide page ── */
+.guide-totop {
+  position: absolute; bottom: 24px; right: 16px;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--card); border: 1px solid var(--border); color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity .25s ease;
+  z-index: 10; cursor: pointer;
+}
+.guide-totop--visible { opacity: 1; pointer-events: auto; }
 #guide-body {
   padding: 4px 2px 24px;
   font-size: var(--fs-base);
@@ -1000,3 +1233,45 @@ select.set-ctrl { text-align: left; -webkit-appearance: none; appearance: none; 
 #guide-body strong { font-weight: var(--fw-semibold); }
 html[lang="de"] #guide-body .tg-en { display: none; }
 html:not([lang="de"]) #guide-body .tg-de { display: none; }
+/* AI-prompt box of the theme guide (kept in step with the tr guide; used once the box is in the guide markup). */
+#guide-body .tg-ai-box {
+  background: var(--card);
+  border: 1px solid var(--value);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+#guide-body .tg-ai-box p { margin: 0 0 8px; font-size: var(--fs-sm); color: var(--text); }
+#guide-body .tg-ai-box .tg-ai-link {
+  display: block;
+  font-size: var(--fs-sm);
+  color: var(--ble);
+  text-decoration: underline;
+  cursor: pointer;
+  word-break: break-all;
+  padding: 4px 0;
+}
+
+/* Tile/button transparency: bind Default surfaces to --tile-alpha/--btn-alpha so the sliders work in
+   every theme (default alpha=1 = solid). Custom themes override via their own #scroller theme.css. */
+.speed-drum, .hero-cell, .motor-cell,
+#data-grid, #actions-section, #all-values, #data-grid-ride {
+  background: rgb(from var(--card) r g b / var(--tile-alpha, 1));
+}
+#quick-grid .mq-btn, #quick-grid .dq-btn {
+  background: rgb(from var(--card) r g b / var(--btn-alpha, 1));
+}
+
+/* ── Trittbrett driver: family gating (ZYD vs LEGACY) + generated scooter-settings controls ── */
+body.is-legacy .zyd-only { display: none !important; }
+.legacy-only { display: none; }
+body.is-legacy .legacy-only { display: block; }
+.mini-send-btn {
+  flex: 0 0 auto; padding: 7px 12px; border-radius: 7px;
+  border: 1px solid var(--btnfill); background: transparent; color: var(--btnfill);
+  font-size: var(--fs-sm); font-weight: var(--fw-bold); cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.mini-send-btn:active { background: color-mix(in srgb, var(--btnfill) 18%, transparent); }
+.mini-send-btn:disabled { opacity: 0.4; border-color: var(--border); color: var(--label); cursor: default; }
+.sc-unit { font-size: var(--fs-sm); color: var(--label); margin-left: 4px; flex-shrink: 0; }
