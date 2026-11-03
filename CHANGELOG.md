@@ -16,6 +16,14 @@ To hand-write the notes for a release, add a section headed with its version num
 
 If no matching section exists the notes fall back to the commit messages, so keeping this file up to date is optional.
 
+## 1.0.22
+
+- Quick-control toggle buttons now use a smaller default font so long German labels no longer overflow or overlap, and the size is adjustable per theme (Settings → Display → Font sizes / Theme Manager).
+- Shorter, clearer quick-button labels: the anti-theft toggle now reads "Lock" (German "Schloss").
+- Speed gauge: the unlocked scale now ends at 100 km/h (it briefly read 110); the locked scale stays at 40, so the gauge reads identically in every Laufbursche app.
+- Dark-mode text brightness now defaults to full (100) instead of 90.
+- Security: in-app downloads (the app-update check and its files) are now restricted to the project's GitHub release hosts.
+
 ## 1.0.21
 
 The dashboard is now driver-rendered and fully customizable, with two built-in gauge themes - and the custom theme manager, full-screen themes and bottom navigation from the earlier unreleased work ship together here.
