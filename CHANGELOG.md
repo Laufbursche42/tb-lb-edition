@@ -20,7 +20,7 @@ If no matching section exists the notes fall back to the commit messages, so kee
 
 - Quick-control toggle buttons now use a smaller default font so long German labels no longer overflow or overlap, and the size is adjustable per theme (Settings → Display → Font sizes / Theme Manager).
 - Shorter, clearer quick-button labels: the anti-theft toggle now reads "Lock" (German "Schloss").
-- Speed gauge: the unlocked scale now ends at 100 km/h (it briefly read 110); the locked scale stays at 40, so the gauge reads identically in every Laufbursche app.
+- Speedometer scale presets. The gauge themes (Carbon, Lambo) now use evenly-spaced, readable marks with the needle pointing exactly at the number; pick the scale - Klar, Fine or Round - in the Theme Manager. Klar marks 0, 10, 15, 20, 22, 25, 30, 40 locked and up to 100 open; the locked scale still tops out at 40.
 - Dark-mode text brightness now defaults to full (100) instead of 90.
 - Security: in-app downloads (the app-update check and its files) are now restricted to the project's GitHub release hosts.
 - The app is now named "TB Laufbursche Edition" on the home screen, so the Laufbursche apps for the different scooter makes are easy to tell apart.
