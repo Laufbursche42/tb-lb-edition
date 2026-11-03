@@ -37,3 +37,7 @@ _portspec/
 NOTES.md
 PROTOCOL.md
 ANALYSIS.md
+
+# Gradle/JVM crash dumps
+hs_err_pid*.log
+replay_pid*.log
