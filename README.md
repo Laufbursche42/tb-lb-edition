@@ -68,6 +68,7 @@ Everything below is implemented and shipping in the app.
 - **Live data hooks.** A theme binds live telemetry through `data-lb` attributes (`speed`, `soc`, `power`, `gear`), toggles classes with `data-lb-state` (e.g. `park`) and can re-arm the triple-tap speed unlock with `data-lb-action="speed-unlock"`. The format is shared across Laufbursche apps, so a theme `.zip` from another one works here too.
 - **Safe by design.** Imported HTML is sanitised before storage - script tags, iframes, inline event handlers, `javascript:`/`data:` URLs and external resources are stripped, so a theme is structure and CSS only and never runs code.
 - **Built-in guide.** A full bilingual (English / German) authoring guide ships inside the app (no internet needed), reachable from the Theme manager.
+- **Two gauge themes with a selectable scale.** Carbon and Lambo ship built in; their speedometer scale is selectable (**Klar**, **Fine** or **Round**) in the Theme manager - evenly-spaced marks with the needle pointing exactly at the number.
 
 ### "All values" telemetry (scroll down on the main screen)
 
