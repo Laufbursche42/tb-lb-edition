@@ -399,7 +399,8 @@ public class MainActivity extends Activity {
             pollApkDownload(dm, id, 0);
         } catch (Throwable t) {
             Log.e(TAG, "startApkDownload failed", t);
-            toast("Download failed: " + t.getMessage());
+            // Keep the exception detail in the log only; show the user a generic message.
+            toast("Download failed");
         }
     }
 
