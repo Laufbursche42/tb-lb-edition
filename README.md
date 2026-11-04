@@ -115,6 +115,7 @@ That colour is the app's own memory of what it last sent, not a value the scoote
 
 - **Error reports** view - the scooter reports a small set of fault codes (E1, E2, E3, E4, E7, E9, F1, F2). Each shows its meaning from the official Trittbrett FAQ (trittbrett.eu/faq), which documents these for KALLE, EMMA, PAUL, SULTAN and FRITZ (not for HILDE). No meaning is invented beyond that source.
 - **Scooter info page**, read live over Bluetooth: the **Bluetooth name**, the detected protocol **family**, the **display version**, the controller **model, hardware, boot and firmware** strings and the three **gear limits** the scooter reports. (The app version lives in the "Version Info & Disclaimer" entry, not here.) On the ZYD family this page is also where you set the **PIN** for scooters configured with the AT+PWD authentication channel and change the scooter's **Bluetooth name**.
+- **Beginner's Guide** - a short, model-by-model guide for new users, reached from Settings (the "Beginner's Guide" entry just above Version Info & Disclaimer). It shows how to connect over Bluetooth (close the official Trittbrett app first - it holds the single connection) and what your model can do: the newer ZYD models (Sultan, Hilde, Fritz, Paul, Kalle v2, Emma v2) have a Bluetooth limiter toggle, while the older Kalle v1 and Emma v1 can be locked and unlocked but not sped up. Honest that the app only sends the value and nothing is flashed, so every change is reversible. Bilingual (EN/DE).
 
 ### Screen streaming
 
