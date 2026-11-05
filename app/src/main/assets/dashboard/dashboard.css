@@ -183,9 +183,10 @@ html[data-theme-loading] #scroller { visibility: hidden; }
   font-size: var(--sz-speed-lbl, var(--fs-base)); color: var(--label); margin-top: 4px;
   font-weight: var(--fw-medium); letter-spacing: .04em;
 }
-/* GPS drum: own size knobs, default to the main speed sizes so the look is unchanged until set. */
-.speed-drum.gps-drum .sd-val { font-size: var(--sz-gps-val, var(--sz-speed-val, clamp(42px, 13vw, 64px))); }
-.speed-drum.gps-drum .sd-unit { font-size: var(--sz-gps-lbl, var(--sz-speed-lbl, var(--fs-base))); }
+/* GPS drum: own size knobs, default to the main speed sizes so the look is unchanged until set.
+   ID-scoped (#speed-row) so these out-specify the #speed-row .sd-val/.sd-unit rules below. */
+#speed-row .gps-drum .sd-val { font-size: var(--sz-gps-val, var(--sz-speed-val, clamp(42px, 13vw, 64px))); }
+#speed-row .gps-drum .sd-unit { font-size: var(--sz-gps-lbl, var(--sz-speed-lbl, var(--fs-base))); }
 
 /* ── Hero Metrics ──────────────────────────────────────────── */
 /* Hero cells and motor cells are the same kind of tile row, so they share one three-column grid
