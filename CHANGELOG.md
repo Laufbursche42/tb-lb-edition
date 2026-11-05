@@ -16,6 +16,12 @@ To hand-write the notes for a release, add a section headed with its version num
 
 If no matching section exists the notes fall back to the commit messages, so keeping this file up to date is optional.
 
+## 1.0.25
+
+- Theme settings now take effect in every theme. Font sizes, colours and spacing set in the Theme Manager now really bind on every theme - including the Default dashboard and the Lambo gauge, where the main speed readout and the live-value tiles ignored the font-size sliders before. Moving a slider now visibly changes the dashboard.
+- Large system fonts no longer break the dashboard. On phones set to a very large system font or display size (e.g. OPPO/ColorOS, Samsung), the fixed cockpit layout is pinned to its own scale and long tile labels wrap inside the tile instead of being clipped, so nothing overflows.
+- Internal security hardening (CodeQL): theme-import error handling no longer echoes exception detail to the dashboard, and the theme path check uses canonical-path containment. No user-facing change.
+
 ## 1.0.24
 
 - New in-app Beginner's Guide for newcomers, reached from Settings (the "Beginner's Guide" entry just above Version Info & Disclaimer). A short, model-aware guide: how to connect over Bluetooth (close the official Trittbrett app first - it holds the single connection) and what your Trittbrett can do - the newer ZYD models (Sultan, Hilde, Fritz, Paul, Kalle v2, Emma v2) have a Bluetooth limiter toggle, while the older Kalle v1 and Emma v1 use an older stack with no speed command (lock/unlock only). It is honest that the app only sends the value - whether the scooter actually runs faster is up to its own controller firmware - and that nothing is flashed, so every change is reversible. The guide shares the same shell and wording across the Laufbursche apps, uses the standard button look and carries no forum link. Fully bilingual (EN/DE).
