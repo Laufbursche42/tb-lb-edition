@@ -498,6 +498,13 @@ Source-available under the PolyForm Noncommercial License 1.0.0 with Additional 
         <input class="set-ctrl" id="pref-unlock-speed" type="number" min="1" max="60" step="1" inputmode="numeric">
         <span class="sc-unit">km/h</span>
       </div>
+      <div class="settings-row zyd-only no-bottom-rule">
+        <div class="settings-row-left">
+          <div class="settings-row-label" data-i18n="settings.tapcount.label">Taps to toggle the speed unlock</div>
+          <div class="settings-row-sublabel" id="tap-count-hint" data-i18n="settings.tapcount.hint">How many taps on the km/h tile switch the speed unlock on or off. Default 3, range 1-50.</div>
+        </div>
+        <input class="set-ctrl" id="tap-count" type="number" min="1" max="50" step="1" inputmode="numeric">
+      </div>
     </div>
 
     <!-- LEGACY family: only the gear select and lock above work; every other group is hidden. -->
@@ -2556,6 +2563,8 @@ function applyLang() {
   try { const d = liveRaw(); applyModelUi({ family: d.family, btName: d.btName }); } catch (e) {}
   renderWhatsNewList();
   renderDisclaimerList();
+  // Tap-count help texts carry the live value via tf() - re-inject after the generic pass.
+  try { refreshTapCountTexts(); } catch (e) {}
   // Label lengths just changed, so the fold has to be measured again.
   try { scheduleFitFold(); } catch (e) {}
 }
@@ -2976,6 +2985,8 @@ function openScooterPage() {
   prefillScoutGear();
   renderScooterFields();
   { const el = document.getElementById('pref-unlock-speed'); if (el) el.value = String(unlockSpeedPref()); }
+  { const el = document.getElementById('tap-count'); if (el) el.value = String(tapCount()); }
+  refreshTapCountTexts();
   document.getElementById('scooter-page').classList.add('open');
 }
 function closeScooterPage() {
@@ -3099,11 +3110,25 @@ function toggleSpeedUnlock() {
   } catch (e) { showToast(tf('msg2.toast.error', { e: e })); }
 }
 
+// How many taps on the km/h tile toggle the speed unlock. User-set 1-50 (default 3), local only.
+function tapCount() {
+  const v = parseFloat(storage.get('lb_tap_count'));
+  return isFinite(v) ? Math.min(Math.max(Math.round(v), 1), 50) : 3;
+}
+// Keep the tap-count-dependent help texts in sync with the live value (and the active language).
+function refreshTapCountTexts() {
+  const n = tapCount();
+  const h = document.getElementById('tap-count-hint');
+  if (h) h.textContent = tf('settings.tapcount.hint', { n: n });
+  document.querySelectorAll('[data-i18n="scooter.speed.unlock.sublabel"]').forEach(el => {
+    el.textContent = tf('scooter.speed.unlock.sublabel', { n: n });
+  });
+}
 function bleDrumTripleTap() {
   if (state.ble && state.ble.family === 'LEGACY') { showToast(t('dash.legacy.nospeed')); return; }
   clearTimeout(_bleDrumTapTimer);
   _bleDrumTaps++;
-  if (_bleDrumTaps >= 3) { _bleDrumTaps = 0; toggleSpeedUnlock(); return; }
+  if (_bleDrumTaps >= tapCount()) { _bleDrumTaps = 0; toggleSpeedUnlock(); return; }
   _bleDrumTapTimer = setTimeout(() => { _bleDrumTaps = 0; }, 700);
 }
 function onVcuTileTap() { bleDrumTripleTap(); }
@@ -3670,6 +3695,13 @@ function wireScooterPage() {
   const l = document.getElementById('scoot-lock-btn'); if (l) l.addEventListener('click', () => scootSetLock(false));
   const p = document.getElementById('pref-unlock-speed');
   if (p) p.addEventListener('change', () => { const v = parseFloat(p.value); if (v > 0 && v <= 60) { try { storage.set('lb_unlock_speed', String(v)); } catch (e) {} } });
+  const tc = document.getElementById('tap-count');
+  if (tc) tc.addEventListener('change', () => {
+    const v = parseFloat(tc.value);
+    const nn = isFinite(v) ? Math.min(Math.max(Math.round(v), 1), 50) : 3;
+    tc.value = nn; try { storage.set('lb_tap_count', String(nn)); } catch (e) {}
+    refreshTapCountTexts();
+  });
   const sp = document.getElementById('btn-set-pin'); if (sp) sp.addEventListener('click', setPin);
   const sn = document.getElementById('btn-set-name'); if (sn) sn.addEventListener('click', setName);
 }
